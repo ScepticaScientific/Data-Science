@@ -15,7 +15,7 @@
 # [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and Ecological Monitoring, Nauka, Moscow, 2007.
 #
 # The end user is granted perpetual permission to reproduce, adapt, and/or distribute this code, provided that
-# an appropriate link is given to the original code at the repository it was downloaded from.
+# an appropriate link is given to the original repository it was downloaded from.
 
 from scipy import signal
 import scipy.linalg as sl
