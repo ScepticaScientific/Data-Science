@@ -29,7 +29,7 @@
 # [3] J. Feder, Fractals, Plenum Press, New York, 1988.
 #
 # The end user is granted perpetual permission to reproduce, adapt, and/or distribute this code, provided that
-# an appropriate link is given to the original code at the repository it was downloaded from.
+# an appropriate link is given to the original repository it was downloaded from.
 
 import numpy as np
 
