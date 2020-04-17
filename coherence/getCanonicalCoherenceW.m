@@ -1,9 +1,9 @@
-function [evt, ev, freq] = getCanonicalCoherence(xx)
+function [evt, ev, freq] = getCanonicalCoherenceW(xx)
 % [evt, ev, freq] = getCanonicalCoherence(xx)
 %
 % This code implements the canonical coherence analysis of multivariate 
-% data. The computation is performed using a non-parametric Fourier 
-% spectrum estimation. For details, please refer to [1].
+% data. The computation is performed using a wavelet spectrum estimation. 
+% For details, please refer to [1].
 %
 % At the input, 'xx' is a multivariate time series of second increments of 
 % the physical observables 'x(t) = (x_1(t), ..., x_N(t))'.
@@ -16,8 +16,6 @@ function [evt, ev, freq] = getCanonicalCoherence(xx)
 % REFERENCES:
 % [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and 
 %     Ecological Monitoring, Nauka, Moscow, 2007.
-% [2] D.M. Filatov and A.A. Lyubushin, Physica A: Stat. Mech. Appl., 527 
-%     (2019) 121309. DOI: 10.1016/j.physa.2019.121309.
 %
 % The end user is granted perpetual permission to reproduce, adapt, and/or 
 % distribute this code, provided that an appropriate link is given to the 
@@ -27,54 +25,57 @@ function [evt, ev, freq] = getCanonicalCoherence(xx)
 N = size(xx, 2);    % Number of variates in the vector time series
 
 % Determining the frequency range
-[~, freq] = cpsd(xx(:, 1), xx(:, 1), [], [], [], 1);
+[~, aux, freq] = wcoherence(xx(:, 1), xx(:, 1), 1.0);
 freq_len = length(freq);
 
+t_len = size(aux, 2);
+
 %% Computing
-ev = zeros(freq_len, N);
+ev = zeros(freq_len, t_len, N);
 for ic = 1 : N
     %% We split the original N-variate signal into an (N - 1)-variate and a 
     % single-variate ones
     x = xx(:, [1 : ic - 1 ic + 1 : N]);     % (N - 1)-variate (i.e. vector) time series
     y = xx(:, ic);                          % Single-variate (i.e. scalar) time series
 
-    %% We compute the spectral matrices (see [1, p. 111]) ...
+    %% We compute the spectral matrices ...
     % ... for the first signal, ...
-    Sxx = zeros(N - 1, N - 1, freq_len);
+    Sxx = zeros(N - 1, N - 1, freq_len, t_len);
     for i = 1 : N - 1
         for j = 1 : N - 1
-            Sxx(i, j, :) = cpsd(x(:, i), x(:, j), [], [], [], 1);
+            [~, Sxx(i, j, :, :), ~] = wcoherence(x(:, i), x(:, j), 1.0);
         end
     end
 
     % ... for the mixture of the first and second signals, ...
-    Sxy = zeros(N - 1, 1, freq_len);
+    Sxy = zeros(N - 1, 1, freq_len, t_len);
     for i = 1 : N - 1
-        Sxy(i, 1, :) = cpsd(x(:, i), y(:, 1), [], [], [], 1);
+        [~, Sxy(i, 1, :, :), ~] = wcoherence(x(:, i), y(:, 1), 1.0);
     end
     
-    Syx = zeros(1, N - 1, freq_len);
+    Syx = zeros(1, N - 1, freq_len, t_len);
     for j = 1 : N - 1
-        Syx(1, j, :) = cpsd(y(:, 1), x(:, j), [], [], [], 1);
+        [~, Syx(1, j, :, :), ~] = wcoherence(y(:, 1), x(:, j), 1.0);
     end
         
     % ... and for the second signal
-    Syy = zeros(1, 1, freq_len);
-    Syy(1, 1, :) = cpsd(y(:, 1), y(:, 1), [], [], [], 1);
+    Syy = zeros(1, 1, freq_len, t_len);
+    [~, Syy(1, 1, :, :), ~] = wcoherence(y(:, 1), y(:, 1), 1.0);
 
     %% We compute the matrix whose eigenvalues are the measures of 
     % coherence and explicitly determine the maximum value of the coherence 
-    % at each frequency
+    % at each frequency for every time moment
     for i = 1 : freq_len
-        % We implement formula (2.3.1) from [1]
-        U = inv(sqrtm(Sxx(:, :, i))) * Sxy(:, :, i) * inv(Syy(:, :, i)) * Syx(:, :, i) * inv(sqrtm(Sxx(:, :, i)));
+        for j = 1 : t_len
+            U = inv(sqrtm(Sxx(:, :, i, j))) * Sxy(:, :, i, j) * inv(Syy(:, :, i, j)) * Syx(:, :, i, j) * inv(sqrtm(Sxx(:, :, i, j)));
         
-        ev(i, ic) = max(real(eig(U)));
+            ev(i, j, ic) = max(real(eig(U)));
+        end
     end
-
+    
     % Normalisation
-    ev(:, ic) = ev(:, ic) / max(abs(ev(:, ic)));
+    ev(:, :, ic) = ev(:, :, ic) / max(max(abs(ev(:, :, ic))));
 end
 
 % Finally we compute the total coherence frequency-wise
-evt = sqrt(prod(ev, 2));
+evt = sqrt(prod(ev, 3));
