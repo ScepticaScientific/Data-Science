@@ -1,9 +1,9 @@
 % This utility provides tests for the canonical coherence analysis 
 % functions 'getCanonicalCoherence()' and 'getCanonicalCoherenceW()'.
-%clear all;
+clear all;
 
 %% Inits
-testID = 3;
+testID = 2;
 
 if (testID == 1)        % No coherence
     N = 3;              % Number of variates in the vector (multivariate) time series
@@ -17,7 +17,7 @@ if (testID == 1)        % No coherence
     ddx(:, 3) = cos(2.0 * pi * t * fcommon / 4.0) + randn(length(t), 1);
 elseif (testID == 2)    % Coherence at three different frequencies
     N = 3;              
-    fs = 10000.0;       
+    fs = 2000.0;       
     t = [0.0 : 1.0 / fs : 1.0 - 1.0 / fs]';
     fcommon = 200.0;    
     

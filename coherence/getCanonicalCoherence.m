@@ -23,58 +23,93 @@ function [evt, ev, freq] = getCanonicalCoherence(xx)
 % distribute this code, provided that an appropriate link is given to the 
 % original repository it was downloaded from.
 
-%% Auxiliaries
-N = size(xx, 2);    % Number of variates in the vector time series
-
-% Determining the frequency range
-[~, freq] = cpsd(xx(:, 1), xx(:, 1), [], [], [], 1);
-freq_len = length(freq);
-
-%% Computing
-ev = zeros(freq_len, N);
-for ic = 1 : N
-    %% We split the original N-variate signal into an (N - 1)-variate and a 
-    % single-variate ones
-    x = xx(:, [1 : ic - 1 ic + 1 : N]);     % (N - 1)-variate (i.e. vector) time series
-    y = xx(:, ic);                          % Single-variate (i.e. scalar) time series
-
-    %% We compute the spectral matrices (see [1, p. 111]) ...
-    % ... for the first signal, ...
-    Sxx = zeros(N - 1, N - 1, freq_len);
-    for i = 1 : N - 1
-        for j = 1 : N - 1
-            Sxx(i, j, :) = cpsd(x(:, i), x(:, j), [], [], [], 1);
-        end
-    end
-
-    % ... for the mixture of the first and second signals, ...
-    Sxy = zeros(N - 1, 1, freq_len);
-    for i = 1 : N - 1
-        Sxy(i, 1, :) = cpsd(x(:, i), y(:, 1), [], [], [], 1);
-    end
+    %% Auxiliaries
+    %tic;    % DEBUG
     
-    Syx = zeros(1, N - 1, freq_len);
-    for j = 1 : N - 1
-        Syx(1, j, :) = cpsd(y(:, 1), x(:, j), [], [], [], 1);
-    end
-        
-    % ... and for the second signal
-    Syy = zeros(1, 1, freq_len);
-    Syy(1, 1, :) = cpsd(y(:, 1), y(:, 1), [], [], [], 1);
+    N = size(xx, 2);    % Number of variates in the vector time series
 
-    %% We compute the matrix whose eigenvalues are the measures of 
-    % coherence and explicitly determine the maximum value of the coherence 
-    % at each frequency
-    for i = 1 : freq_len
-        % We implement formula (2.3.1) from [1]
-        U = inv(sqrtm(Sxx(:, :, i))) * Sxy(:, :, i) * inv(Syy(:, :, i)) * Syx(:, :, i) * inv(sqrtm(Sxx(:, :, i)));
+    % Determining the frequency range
+    [~, freq] = cpsd(xx(:, 1), xx(:, 1), [], [], [], 1);
+    freq_len = length(freq);
+
+    %% Computing
+    ev = zeros(freq_len, N);
+    for ic = 1 : N
+        %% We split the original N-variate signal into an (N - 1)-variate and a 
+        % single-variate ones
+        x = xx(:, [1 : ic - 1 ic + 1 : N]);     % (N - 1)-variate (i.e. vector) time series
+        y = xx(:, ic);                          % Single-variate (i.e. scalar) time series
+
+        %% We compute the spectral matrices (see [1, p. 111]) ...
+        % ... for the first signal, ...
+        Sxx = zeros(N - 1, N - 1, freq_len);
+        for i = 1 : N - 1
+            for j = 1 : N - 1
+                Sxx(i, j, :) = cpsd(x(:, i), x(:, j), [], [], [], 1);
+            end
+        end
+
+        % ... for the mixture of the first and second signals, ...
+        Sxy = zeros(N - 1, 1, freq_len);
+        for i = 1 : N - 1
+            Sxy(i, 1, :) = cpsd(x(:, i), y(:, 1), [], [], [], 1);
+        end
+
+        Syx = zeros(1, N - 1, freq_len);
+        for j = 1 : N - 1
+            Syx(1, j, :) = cpsd(y(:, 1), x(:, j), [], [], [], 1);
+        end
+
+        % ... and for the second signal
+        Syy = zeros(1, 1, freq_len);
+        Syy(1, 1, :) = cpsd(y(:, 1), y(:, 1), [], [], [], 1);
+
+        %% We compute the matrix whose eigenvalues are PCA-related measures 
+        % of coherence and keep the maximum value
+        %{
+        % Way 1 (element-wise)
+        for i = 1 : freq_len
+            % We implement formula (2.3.1) from [1]
+            U = inv(sqrtm(Sxx(:, :, i))) * Sxy(:, :, i) * inv(Syy(:, :, i)) * Syx(:, :, i) * inv(sqrtm(Sxx(:, :, i)));
+
+            ev(i, ic) = max(real(eig(U)));
+        end
+        %}
+
+        %
+        % Way 2 (vectorised)
+        Sxx_aux = toMatrixArray(Sxx);
+        Sxx_aux = cellfun(@inv, Sxx_aux, 'UniformOutput', false);
+
+        Sxy_aux = toMatrixArray(Sxy);
+
+        Syy_aux = toMatrixArray(Syy);
+        Syy_aux = cellfun(@inv, Syy_aux, 'UniformOutput', false);
+
+        Syx_aux = toMatrixArray(Syx);
+
+        aux1 = cellfun(@mtimes, Sxx_aux, Sxy_aux, 'UniformOutput', false);
+        aux2 = cellfun(@mtimes, aux1, Syy_aux, 'UniformOutput', false);
+        UU = cellfun(@mtimes, aux2, Syx_aux, 'UniformOutput', false);
         
-        ev(i, ic) = max(real(eig(U)));
+        aux = cellfun(@eig, UU, 'UniformOutput', false);
+        aux = cellfun(@real, aux, 'UniformOutput', false);
+        ev(:, ic) = cellfun(@max, aux);
+        %}        
+        
+        % Normalisation
+        ev(:, ic) = ev(:, ic) / max(abs(ev(:, ic)));
     end
 
-    % Normalisation
-    ev(:, ic) = ev(:, ic) / max(abs(ev(:, ic)));
+    % Finally we compute the total coherence frequency-wise
+    evt = sqrt(prod(ev, 2));
+
+    %toc;    % DEBUG
 end
 
-% Finally we compute the total coherence frequency-wise
-evt = sqrt(prod(ev, 2));
+% This auxiliary function reshapes a 3-D array into a sequence of 2-D
+% matrices
+function res = toMatrixArray(mtrx)
+    aux = reshape(mtrx, size(mtrx, 1), size(mtrx, 3) * size(mtrx, 2)); 
+    res = mat2cell(aux, size(mtrx, 1), ones(1, size(mtrx, 3)) * size(mtrx, 2));
+end    
