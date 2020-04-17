@@ -1,7 +1,7 @@
 #!/home/ubuntu/miniconda/bin/python
 #
 # This code implements the canonical coherence analysis of multivariate data. The computation is performed using
-# a non-parametric spectrum estimation. For details, please refer to [1].
+# a non-parametric Fourier spectrum estimation. For details, please refer to [1].
 #
 # INPUT:
 # xx      - a multivariate time series of second increments of the physical observables 'x(t) = (x_1(t), ..., x_N(t))'
@@ -13,6 +13,7 @@
 #
 # REFERENCES:
 # [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and Ecological Monitoring, Nauka, Moscow, 2007.
+# [2] D.M. Filatov and A.A. Lyubushin, Physica A: Stat. Mech. Appl., 527 (2019) 121309. DOI: 10.1016/j.physa.2019.121309.
 #
 # The end user is granted perpetual permission to reproduce, adapt, and/or distribute this code, provided that
 # an appropriate link is given to the original repository it was downloaded from.
@@ -72,7 +73,10 @@ def getCanonicalCoherence(xx):
 
             ev[i - 1, ic - 1] = max(np.real(linalg.eig(U)[1 - 1]))
 
+        # Normalisation
+        ev[:, ic - 1] = ev[:, ic - 1] / max(np.abs(ev[:, ic - 1]))
+
     # Finally we compute the total coherence frequency-wise
-    evt = np.prod(ev, axis = 2 - 1)
+    evt = np.sqrt(np.prod(ev, axis = 2 - 1))
 
     return [evt, ev, freq]
