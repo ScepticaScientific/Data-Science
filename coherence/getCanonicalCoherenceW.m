@@ -1,5 +1,5 @@
 function [evt, ev, freq] = getCanonicalCoherenceW(xx)
-% [evt, ev, freq] = getCanonicalCoherence(xx)
+% [evt, ev, freq] = getCanonicalCoherenceW(xx)
 %
 % This code implements the canonical coherence analysis of multivariate 
 % data. The computation is performed using a wavelet spectrum estimation. 
