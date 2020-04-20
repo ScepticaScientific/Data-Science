@@ -8,9 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ## Preparing data
-N = 3                                   # Number of variates in the vector (multivariate) time series
+N = 5                                   # Number of variates in the vector (multivariate) time series
 
-fs = 1000.0                             # Discretisation frequency
+fs = 10000.0                             # Discretisation frequency
 t = np.arange(0.0, 1.0, 1.0 / fs)
 
 fcommon = 200.0                         # Base frequency
@@ -18,7 +18,7 @@ fcommon = 200.0                         # Base frequency
 c1 = 1.0 * np.cos(2.0 * np.pi * t * fcommon)            # Trend No. 1 is sampled at the frequency 'fcommon'
 c2 = 0.5 * np.cos(2.0 * np.pi * t * fcommon / 2.0)      # Trend No. 2 is sampled at the frequency 'fcommon / 2'
 c3 = 1.0 * np.cos(2.0 * np.pi * t * fcommon / 4.0)      # Trend No. 3 is sampled at the frequency 'fcommon / 4'
-c = c1 + c2 + c3                                        # The total trend has three frequencies
+c = c1 + 1.0 * c2 + 1.0 * c3                                        # The total trend has three frequencies
 
 ddx = np.ndarray((len(t), N))
 for i in range(1, N + 1):

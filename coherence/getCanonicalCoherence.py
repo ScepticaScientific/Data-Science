@@ -1,7 +1,8 @@
 #!/home/ubuntu/miniconda/bin/python
 #
-# This code implements the canonical coherence analysis of multivariate data. The computation is performed using
-# a non-parametric Fourier spectrum estimation. For details, please refer to [1].
+# This code implements the canonical coherence analysis (CCA) of multivariate data. The computation is performed using
+# an accurate non-parametric Fourier spectrum estimation different from the standard Python function scipy.signal.csd().
+# For details on CCA, please refer to [1].
 #
 # INPUT:
 # xx      - a multivariate time series of second increments of the physical observables 'x(t) = (x_1(t), ..., x_N(t))'
@@ -18,10 +19,13 @@
 # The end user is granted perpetual permission to reproduce, adapt, and/or distribute this code, provided that
 # an appropriate link is given to the original repository it was downloaded from.
 
-from scipy import signal
 import scipy.linalg as sl
 import numpy as np
 from numpy import linalg
+
+import sys
+sys.path.append('../utils')
+from getPowerSpectrum import getPowerSpectrum
 
 def getCanonicalCoherence(xx):
     ## Initialisation
@@ -30,7 +34,7 @@ def getCanonicalCoherence(xx):
     # Auxiliary computation (of the frequency range)
     aux_nperseg = np.int(2 ** np.floor(np.log2(xx.shape[1 - 1] / 2)) + 1)
 
-    [freq, _] = signal.csd(xx[:, 1 - 1], xx[:, 1 - 1], window = 'hamming', nperseg = aux_nperseg)
+    [_, freq] = getPowerSpectrum(xx[:, 1 - 1], xx[:, 1 - 1])
     freq_len = np.int(len(freq))
 
     ## Computing
@@ -45,20 +49,20 @@ def getCanonicalCoherence(xx):
         Sxx = np.zeros((N - 1, N - 1, freq_len), dtype = np.complex128)
         for i in range(1, N):
             for j in range(1, N):
-                [_, Sxx[i - 1, j - 1, :]] = signal.csd(x[:, i - 1], x[:, j - 1], window = 'hamming', nperseg = aux_nperseg)
+                [Sxx[i - 1, j - 1, :], _] = getPowerSpectrum(x[:, i - 1], x[:, j - 1])
 
         # ... for the mixture of the first and second signals, ...
         Sxy = np.zeros((N - 1, 1, freq_len), dtype = np.complex128)
         for i in range(1, N):
-            [_, Sxy[i - 1, 1 - 1, :]] = signal.csd(x[:, i - 1], y[:, 1 - 1], window = 'hamming', nperseg = aux_nperseg)
+            [Sxy[i - 1, 1 - 1, :], _] = getPowerSpectrum(x[:, i - 1], y[:, 1 - 1])
 
         Syx = np.zeros((1, N - 1, freq_len), dtype = np.complex128)
         for j in range(1, N):
-            [_, Syx[1 - 1, j - 1, :]] = signal.csd(y[:, 1 - 1], x[:, j - 1], window = 'hamming', nperseg = aux_nperseg)
+            [Syx[1 - 1, j - 1, :], _] = getPowerSpectrum(y[:, 1 - 1], x[:, j - 1])
 
         # ... and for the second signal
         Syy = np.zeros((1, 1, freq_len), dtype = np.complex128)
-        [_, Syy[1 - 1, 1 - 1, :]] = signal.csd(y[:, 1 - 1], y[:, 1 - 1], window = 'hamming', nperseg = aux_nperseg)
+        [Syy[1 - 1, 1 - 1, :], _] = getPowerSpectrum(y[:, 1 - 1], y[:, 1 - 1])
 
         # We compute the matrix whose eigenvalues are the measures of coherence and explicitly determine
         # the maximum value of the coherence at each frequency
