@@ -32,8 +32,6 @@ def getCanonicalCoherence(xx):
     N = xx.shape[2 - 1]     # Number of variates in the vector time series
 
     # Auxiliary computation (of the frequency range)
-    aux_nperseg = np.int(2 ** np.floor(np.log2(xx.shape[1 - 1] / 2)) + 1)
-
     [_, freq] = getPowerSpectrum(xx[:, 1 - 1], xx[:, 1 - 1])
     freq_len = np.int(len(freq))
 
