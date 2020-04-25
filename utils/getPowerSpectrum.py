@@ -1,20 +1,22 @@
 #!/home/ubuntu/miniconda/bin/python
 #
-# This code implements the computation of the auto- or cross- power spectrum using Welch's method.
-# The code duplicates the corresponding code of MATLAB (see 'pwelch()' and 'cpsd()' there).
+# This code implements the computation of the continuous Fourier power auto- or cross-spectrum using Welch's method.
+# The code is based on MATLAB's functions pwelch() and cpsd().
 #
-# At the input, 'x' and 'y' are time series of the physical observables 'x(t)' and 'y(t)'. If 'y' is omitted
-# then the auto-spectrum of 'x' is computed; if 'y' is provided then the cross-spectrum is computed.
+# At the input, 'x' is a uni- or bivariate time series of the physical observables 'x_1(t)' and, possibly, 'x_2(t)',
+# while 'fs' is the sampling rate. If 'x_2(t)' is omitted then the auto-spectrum of 'x_1(t)' is computed; otherwise
+# the cross-spectrum between 'x_1(t)' and 'x_2(t)' is computed. The time series are to be provided column-wise
+# for each variate.
 #
-# At the output, 'Pxx' is the power spectrum, while 'freq' is the frequency range over which the spectrum is computed.
+# At the output, 'Ps' is the power spectrum, while 'freq' is the frequency range over which the spectrum is computed.
 #
 # The end user is granted perpetual permission to reproduce, adapt, and/or distribute this code, provided that
 # an appropriate link is given to the original repository it was downloaded from.
 
 import numpy as np
 
-def getPowerSpectrum(x, y = []):
-    ## Initialisation
+def getPowerSpectrum(x, fs = 1.0):
+    # Initialisation
     x_len = x.shape[1 - 1]
 
     wndTotal = np.int(np.floor(x_len / 4.5))            # Window length
@@ -32,66 +34,49 @@ def getPowerSpectrum(x, y = []):
     iTo = iFrom + wndTotal - 1
 
     # We compute periodograms for each segment of the time interval in a moving window ...
-    Sxx = np.zeros((nfft))
-    if (len(y) > 0):
+    Per = np.zeros(nfft)
+
+    if (len(x.shape) == 1):
         for i in range(1, nSegments + 1):
-            [Sxxk, freq] = getPeriodogram(x[iFrom[i - 1] - 1 : iTo[i - 1]], y[iFrom[i - 1] - 1 : iTo[i - 1]], wnd, nfft, 1.0)
-            Sxx = Sxx + Sxxk
+            [Per_i, freq] = getPeriodogram(x[iFrom[i - 1] - 1 : iTo[i - 1]], [], wnd, nfft, fs)
+            Per = Per + Per_i
     else:
-        for i in range(1, nSegments + 1):
-            [Sxxk, freq] = getPeriodogram(x[iFrom[i - 1] - 1 : iTo[i - 1]], [], wnd, nfft, 1.0)
-            Sxx = Sxx + Sxxk
+        if (x.shape[2 - 1] == 1):
+            for i in range(1, nSegments + 1):
+                [Per_i, freq] = getPeriodogram(x[iFrom[i - 1] - 1 : iTo[i - 1], 1 - 1], [], wnd, nfft, fs)
+                Per = Per + Per_i
+        else:
+            for i in range(1, nSegments + 1):
+                [Per_i, freq] = getPeriodogram(x[iFrom[i - 1] - 1 : iTo[i - 1], 1 - 1], x[iFrom[i - 1] - 1 : iTo[i - 1], 2 - 1], wnd, nfft, fs)
+                Per = Per + Per_i
     # ... and then determine the averaged periodogram all over the segments
-    Sxx = Sxx / nSegments
+    Per = Per / nSegments
 
     # Finally, we adjust the averaged periodogram to obtain the spectrum
-    [Pxx, freq] = getSpectrum(Sxx, freq, nfft, 1.0)
+    [Ps, freq] = getSpectrum(Per, freq, nfft)
 
-    return [Pxx, freq]
+    return [Ps, freq]
 
 ## Auxiliaries
-# Adjustment of spectrum
-def getSpectrum(Sxx, freq, nfft, fs):
-    # We keep only the values corresponding to the frequency  range[0, pi] or [0, pi)
-    if (np.mod(nfft, 2) == 1):
-        inds = np.arange(1, np.int((nfft + 1) / 2 + 1))
-
-        Sxx = 2.0 * Sxx[inds - 1]
-        Sxx[1 - 1] = Sxx[1 - 1] / 2.0
-    else:
-        inds = np.arange(1, np.int(nfft / 2 + 1 + 1))
-
-        Sxx = 2.0 * Sxx[inds - 1]
-        Sxx[1 - 1] = Sxx[1 - 1] / 2.0
-        Sxx[-1] = Sxx[-1] / 2.0
-
-    freq = freq[inds - 1]
-
-    # Normalisation to the sampling frequency
-    Pxx = Sxx / fs
-
-    return [Pxx, freq]
-
 # Computation of periodogram
 def getPeriodogram(x, y, wnd, nfft, fs):
-    # We compute the Fourier transform(s) of the signal(s)
-    Fx = np.fft.fft(np.multiply(x, wnd), nfft)
+    # We compute the continuous window's energy
+    U = np.sum(wnd ** 2.0) / fs
+
+    # We compute the continuous Fourier transform(s) of the signal(s)
+    Fx = np.fft.fft(np.multiply(x, wnd), nfft) / fs
 
     if (len(y) != 0):
-        Fy = np.fft.fft(np.multiply(y, wnd), nfft)
-
-    # We compute the window's energy
-    U = np.sum(wnd ** 2)
-
-    # Finally, we compute the auto- or the cross- periodogram ...
-    if (len(y) != 0):
-        Pxx = np.multiply(Fx, np.conj(Fy)) / U
+        Fy = np.fft.fft(np.multiply(y, wnd), nfft) / fs
     else:
-        Pxx = np.multiply(Fx, np.conj(Fx)) / U
+        Fy = Fx
+
+    # Finally, we compute the auto- or the cross-periodogram ...
+    Per = np.multiply(Fx, np.conj(Fy)) / U
     # ... and obtain the frequency range
     freq = getFrequencies(nfft, fs)
 
-    return [Pxx, freq]
+    return [Per, freq]
 
 # Adjustment of frequency range
 def getFrequencies(N, fs):
@@ -114,6 +99,25 @@ def getFrequencies(N, fs):
     freq[N - 1] = fs - freqResolution
 
     return freq
+
+# Adjustment of periodogram to get spectrum
+def getSpectrum(Per, freq, nfft):
+    # We keep only the values corresponding to the frequency range [0, pi] or [0, pi)
+    if (np.mod(nfft, 2) == 1):
+        inds = np.arange(1, np.int((nfft + 1) / 2 + 1))
+
+        Per = 2.0 * Per[inds - 1]
+        Per[1 - 1] = Per[1 - 1] / 2.0
+    else:
+        inds = np.arange(1, np.int(nfft / 2 + 1 + 1))
+
+        Per = 2.0 * Per[inds - 1]
+        Per[1 - 1] = Per[1 - 1] / 2.0
+        Per[-1] = Per[-1] / 2.0
+
+    freq = freq[inds - 1]
+
+    return [Per, freq]
 
 # The closest power of two such that two to the power is greater than, or equal to, the given value
 def nextpow2(val):
