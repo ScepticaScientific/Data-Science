@@ -1,6 +1,6 @@
 #!/home/ubuntu/miniconda/bin/python
 #
-# This code implements the computation of the continuous Fourier power auto- or cross-spectrum using Welch's method.
+# This code implements the computation of the continuous Fourier auto- or cross- power spectrum using Welch's method.
 # The code is based on MATLAB's functions pwelch() and cpsd().
 #
 # At the input, 'x' is a uni- or bivariate time series of the physical observables 'x_1(t)' and, possibly, 'x_2(t)',
