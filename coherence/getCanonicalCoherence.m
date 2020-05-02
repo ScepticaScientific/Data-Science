@@ -1,12 +1,12 @@
-function [evt, ev, freq] = getCanonicalCoherence(xx)
-% [evt, ev, freq] = getCanonicalCoherence(xx)
+function [evt, ev, freq] = getCanonicalCoherence(ddx, fs)
+% [evt, ev, freq] = getCanonicalCoherence(ddx)
 %
 % This code implements the canonical coherence analysis of multivariate 
 % data. The computation is performed using a non-parametric Fourier 
-% spectrum estimation. For details, please refer to [1].
+% spectrum estimation. For details, please refer to [1, 2].
 %
-% At the input, 'xx' is a multivariate time series of second increments of 
-% the physical observables 'x(t) = (x_1(t), ..., x_N(t))'.
+% At the input, 'ddx' is a multivariate time series of second increments of 
+% the physical observable 'ddx(t) = (ddx_1(t), ..., ddx_N(t))'.
 %
 % At the output, 'evt' is the total coherence coefficient over the 
 % frequency range, 'ev' is the array of partial coherence coefficients over 
@@ -24,48 +24,46 @@ function [evt, ev, freq] = getCanonicalCoherence(xx)
 % original repository it was downloaded from.
 
     %% Auxiliaries
-    %tic;    % DEBUG
-    
-    N = size(xx, 2);    % Number of variates in the vector time series
+    N = size(ddx, 2);    % Number of variates in the vector time series
 
     % Determining the frequency range
-    [~, freq] = cpsd(xx(:, 1), xx(:, 1), [], [], [], 1);
+    [~, freq] = cpsd(ddx(:, 1), ddx(:, 1), [], [], [], fs);
     freq_len = length(freq);
 
     %% Computing
     ev = zeros(freq_len, N);
     for ic = 1 : N
-        %% We split the original N-variate signal into an (N - 1)-variate and a 
-        % single-variate ones
-        x = xx(:, [1 : ic - 1 ic + 1 : N]);     % (N - 1)-variate (i.e. vector) time series
-        y = xx(:, ic);                          % Single-variate (i.e. scalar) time series
+        %% We split the original N-variate signal into an (N - 1)-variate 
+        % and a single-variate ones
+        x = ddx(:, [1 : ic - 1 ic + 1 : N]);     % (N - 1)-variate (i.e. vector) time series
+        y = ddx(:, ic);                          % Single-variate (i.e. scalar) time series
 
         %% We compute the spectral matrices (see [1, p. 111]) ...
         % ... for the first signal, ...
         Sxx = zeros(N - 1, N - 1, freq_len);
         for i = 1 : N - 1
             for j = 1 : N - 1
-                Sxx(i, j, :) = cpsd(x(:, i), x(:, j), [], [], [], 1);
+                Sxx(i, j, :) = cpsd(x(:, i), x(:, j), [], [], [], fs);
             end
         end
 
         % ... for the mixture of the first and second signals, ...
         Sxy = zeros(N - 1, 1, freq_len);
         for i = 1 : N - 1
-            Sxy(i, 1, :) = cpsd(x(:, i), y(:, 1), [], [], [], 1);
+            Sxy(i, 1, :) = cpsd(x(:, i), y(:, 1), [], [], [], fs);
         end
 
         Syx = zeros(1, N - 1, freq_len);
         for j = 1 : N - 1
-            Syx(1, j, :) = cpsd(y(:, 1), x(:, j), [], [], [], 1);
+            Syx(1, j, :) = cpsd(y(:, 1), x(:, j), [], [], [], fs);
         end
 
         % ... and for the second signal
         Syy = zeros(1, 1, freq_len);
-        Syy(1, 1, :) = cpsd(y(:, 1), y(:, 1), [], [], [], 1);
+        Syy(1, 1, :) = cpsd(y(:, 1), y(:, 1), [], [], [], fs);
 
-        %% We compute the matrix whose eigenvalues are PCA-related measures 
-        % of coherence and keep the maximum value
+        %% We compute the matrix, whose eigenvalues are PCA-related 
+        % measures of coherence, and keep the maximum value
         %{
         % Way 1 (element-wise)
         for i = 1 : freq_len
@@ -88,23 +86,18 @@ function [evt, ev, freq] = getCanonicalCoherence(xx)
 
         Syx_aux = toMatrixArray(Syx);
 
-        aux1 = cellfun(@mtimes, Sxx_aux, Sxy_aux, 'UniformOutput', false);
-        aux2 = cellfun(@mtimes, aux1, Syy_aux, 'UniformOutput', false);
-        UU = cellfun(@mtimes, aux2, Syx_aux, 'UniformOutput', false);
+        aux = cellfun(@mtimes, Sxx_aux, Sxy_aux, 'UniformOutput', false);
+        aux = cellfun(@mtimes, aux, Syy_aux, 'UniformOutput', false);
+        U = cellfun(@mtimes, aux, Syx_aux, 'UniformOutput', false);
         
-        aux = cellfun(@eig, UU, 'UniformOutput', false);
+        aux = cellfun(@eig, U, 'UniformOutput', false);
         aux = cellfun(@real, aux, 'UniformOutput', false);
         ev(:, ic) = cellfun(@max, aux);
         %}        
-        
-        % Normalisation
-        ev(:, ic) = ev(:, ic) / max(abs(ev(:, ic)));
     end
 
     % Finally we compute the total coherence frequency-wise
-    evt = sqrt(prod(ev, 2));
-
-    %toc;    % DEBUG
+    evt = prod(ev, 2) .^ (1.0 / N);
 end
 
 % This auxiliary function reshapes a 3-D array into a sequence of 2-D

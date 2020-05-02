@@ -1,37 +1,71 @@
 #!/home/ubuntu/miniconda/bin/python
 #
-# This file is the entry point for testing the canonical coherence analysis ('getCanonicalCoherence.py').
-# The initial multivariate dataset is simulated below.
+# This file is the entry point for testing the canonical coherence analysis methods provided by the functions
+# getCanonicalCoherence() and getCanonicalCoherenceW(). Set the testID parameter to run a certain test.
 
 from getCanonicalCoherence import getCanonicalCoherence
+from getCanonicalCoherenceW import getCanonicalCoherenceW
 import numpy as np
 import matplotlib.pyplot as plt
 
 ## Preparing data
-N = 5                                   # Number of variates in the vector (multivariate) time series
+testID = 3      # Any integer between 1 and 3
 
-fs = 10000.0                             # Discretisation frequency
-t = np.arange(0.0, 1.0, 1.0 / fs)
+if (testID == 1):                           # No coherence
+    N = 3                                   # Number of variates in the vector (multivariate) time series
 
-fcommon = 200.0                         # Base frequency
+    fs = 1000.0                             # Discretisation frequency
+    t = np.arange(0.0, 1.0, 1.0 / fs)
 
-c1 = 1.0 * np.cos(2.0 * np.pi * t * fcommon)            # Trend No. 1 is sampled at the frequency 'fcommon'
-c2 = 0.5 * np.cos(2.0 * np.pi * t * fcommon / 2.0)      # Trend No. 2 is sampled at the frequency 'fcommon / 2'
-c3 = 1.0 * np.cos(2.0 * np.pi * t * fcommon / 4.0)      # Trend No. 3 is sampled at the frequency 'fcommon / 4'
-c = c1 + 1.0 * c2 + 1.0 * c3                                        # The total trend has three frequencies
+    fcommon = 200.0                         # Base frequency
 
-ddx = np.ndarray((len(t), N))
-for i in range(1, N + 1):
-    # Each of the scalar time series within the multivariate time series contains the total trend plus a random noise
-    ddx[:, i - 1] = c + np.random.randn(len(t))
+    c = np.zeros((len(t), N))
+    c[:, 1 - 1] = 1.0 * np.cos(2.0 * np.pi * t * fcommon)          # Signal No. 1's trend
+    c[:, 2 - 1] = 0.5 * np.cos(2.0 * np.pi * t * fcommon / 2.0)    # Signal No. 2's trend
+    c[:, 3 - 1] = 1.0 * np.cos(2.0 * np.pi * t * fcommon / 4.0)    # Signal No. 3's trend
+
+    ddx = np.ndarray((len(t), N))
+    for i in range(1, N + 1):
+        ddx[:, i - 1] = c[:, i - 1] + np.random.randn(len(t))      # Each of the scalar time series has its own frequency plus a random noise
+elif (testID == 2):                                         # Coherence at three different frequencies
+    N = 3
+
+    fs = 1000.0
+    t = np.arange(0.0, 1.0, 1.0 / fs)
+
+    fcommon = 200.0
+
+    c1 = 1.0 * np.cos(2.0 * np.pi * t * fcommon)            # Trend No. 1 is sampled at the frequency 'fcommon'
+    c2 = 0.5 * np.cos(2.0 * np.pi * t * fcommon / 2.0)      # Trend No. 2 is sampled at the frequency 'fcommon / 2'
+    c3 = 1.0 * np.cos(2.0 * np.pi * t * fcommon / 4.0)      # Trend No. 3 is sampled at the frequency 'fcommon / 4'
+    c = c1 + c2 + c3                                        # The total trend has three frequencies
+
+    ddx = np.ndarray((len(t), N))
+    for i in range(1, N + 1):
+        ddx[:, i - 1] = c + np.random.randn(len(t))         # Each of the scalar time series within the multivariate time series contains the common total trend plus a random noise
+elif (testID == 3):                                         # Coherence at two different frequencies in time-shifted time ranges
+    N = 3
+
+    fs = 1000.0
+    t = np.arange(0.0, 2.0, 1.0 / fs)
+
+    fcommon1 = 10.0
+    fcommon2 = 50.0
+
+    ddx = np.ndarray((len(t), N))
+    ddx[:, 1 - 1] = np.multiply(np.cos(2.0 * np.pi * fcommon1 * t), np.logical_and(t >= 0.5, t < 1.1)) + np.multiply(np.cos(2.0 * np.pi * fcommon2 * t), np.logical_and(t >= 0.2, t < 1.4)) + 0.25 * np.random.randn(len(t))
+    ddx[:, 2 - 1] = np.multiply(np.sin(2.0 * np.pi * fcommon1 * t), np.logical_and(t >= 0.6, t < 1.2)) + np.multiply(np.sin(2.0 * np.pi * fcommon2 * t), np.logical_and(t >= 0.4, t < 1.6)) + 0.35 * np.random.randn(len(t))
+    ddx[:, 3 - 1] = np.multiply(np.sin(2.0 * np.pi * fcommon1 * t), np.logical_and(t >= 1.5, t < 1.8)) + np.multiply(np.sin(2.0 * np.pi * fcommon2 * t), np.logical_and(t >= 1.3, t < 1.7)) + 0.15 * np.random.randn(len(t))
 
 ## Computing
-[evt, ev, freq] = getCanonicalCoherence(ddx)
+[evt, ev, freq] = getCanonicalCoherence(ddx, fs)
+[wevt, wev, freqS] = getCanonicalCoherenceW(ddx, fs, True)       # We use smoothing to avoid singular spectral matrices due to nearly the same wavelet spectra
 
 ## Output
+# (Fourier) CCA
 plt.figure()
 plt.subplot(2, 1, 1)
-plt.semilogx(freq * fs, evt, 'k-')
+plt.semilogx(freq, evt, 'k-')
 plt.xlabel(r'$\omega$')
 plt.ylabel(r'$C(\omega)$')
 plt.grid('on')
@@ -40,11 +74,32 @@ plt.title('Canonical Coherence Analysis')
 plt.subplot(2, 1, 2)
 leg_txt = []
 for i in range(1, N + 1):
-    plt.semilogx(freq * fs, ev[:, i - 1])
+    plt.semilogx(freq, ev[:, i - 1])
     leg_txt.append('%d' % (i))
 plt.legend(leg_txt)
 plt.xlabel(r'$\omega$')
 plt.ylabel(r'$c_i(\omega)$')
 plt.grid('on')
+
+# Wavelet CCA
+plt.figure()
+plt.pcolormesh(t, freqS, wevt)
+plt.xlabel(r'$t$')
+plt.ylabel(r'$\omega$')
+plt.title('Wavelet CCA, Total Coherence')
+plt.yscale('log')
+plt.colorbar()
+
+plt.figure()
+for i in range(1, N + 1):
+    plt.subplot(N, 1, i)
+    plt.pcolormesh(t, freqS, wev[:, :, i - 1])
+    if (i == 1):
+        plt.title('Wavelet CCA, Partial Coherences')
+    if (i == N):
+        plt.xlabel(r'$t$')
+    plt.ylabel(r'$\omega$')
+    plt.yscale('log')
+    plt.colorbar()
 
 plt.show()

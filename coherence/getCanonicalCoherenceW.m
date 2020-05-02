@@ -1,17 +1,17 @@
-function [evt, ev, freq] = getCanonicalCoherenceW(xx)
-% [evt, ev, freq] = getCanonicalCoherenceW(xx)
+function [evt, ev, freq] = getCanonicalCoherenceW(ddx, fs)
+% [evt, ev, freq] = getCanonicalCoherenceW(ddx)
 %
 % This code implements the canonical coherence analysis of multivariate 
 % data. The computation is performed using a wavelet spectrum estimation. 
 % For details, please refer to [1].
 %
-% At the input, 'xx' is a multivariate time series of second increments of 
-% the physical observables 'x(t) = (x_1(t), ..., x_N(t))'.
+% At the input, 'ddx' is a multivariate time series of second increments of 
+% the physical observable 'ddx(t) = (ddx_1(t), ..., ddx_N(t))'.
 %
-% At the output, 'evt' is the total coherence coefficient over the 
-% frequency range, 'ev' is the array of partial coherence coefficients over 
-% the frequency range, 'freq' is the frequency range over which the 
-% coherence spectrum is computed.
+% At the output, 'evt' is the total coherence spectrum (the coherence
+% coefficient between 0.0 and 1.0), 'ev' is the array of partial coherence 
+% coefficients, while 'freq' is the frequency range over which the 
+% coherence is computed.
 %
 % REFERENCES:
 % [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and 
@@ -22,12 +22,10 @@ function [evt, ev, freq] = getCanonicalCoherenceW(xx)
 % original repository it was downloaded from.
 
     %% Auxiliaries
-    %tic;    % DEBUG
-    
-    N = size(xx, 2);    % Number of variates in the vector time series
+    N = size(ddx, 2);    % Number of variates in the vector time series
 
     % Determining the frequency range
-    [~, aux, freq] = wcoherence(xx(:, 1), xx(:, 1), 1.0);
+    [~, aux, freq] = wcoherence(ddx(:, 1), ddx(:, 1), fs);
     freq_len = length(freq);
 
     t_len = size(aux, 2);
@@ -37,35 +35,35 @@ function [evt, ev, freq] = getCanonicalCoherenceW(xx)
     for ic = 1 : N
         %% We split the original N-variate signal into an (N - 1)-variate 
         % and a single-variate ones
-        x = xx(:, [1 : ic - 1 ic + 1 : N]);     % (N - 1)-variate (i.e. vector) time series
-        y = xx(:, ic);                          % Single-variate (i.e. scalar) time series
+        x = ddx(:, [1 : ic - 1 ic + 1 : N]);     % (N - 1)-variate (i.e. vector) time series
+        y = ddx(:, ic);                          % Single-variate (i.e. scalar) time series
 
         %% We compute the spectral matrices ...
         % ... for the first signal, ...
         Sxx = zeros(N - 1, N - 1, freq_len, t_len);
         for i = 1 : N - 1
             for j = 1 : N - 1
-                [~, Sxx(i, j, :, :), ~] = wcoherence(x(:, i), x(:, j), 1.0);
+                [~, Sxx(i, j, :, :), ~] = wcoherence(x(:, i), x(:, j), fs);
             end
         end
 
         % ... for the mixture of the first and second signals, ...
         Sxy = zeros(N - 1, 1, freq_len, t_len);
         for i = 1 : N - 1
-            [~, Sxy(i, 1, :, :), ~] = wcoherence(x(:, i), y(:, 1), 1.0);
+            [~, Sxy(i, 1, :, :), ~] = wcoherence(x(:, i), y(:, 1), fs);
         end
 
         Syx = zeros(1, N - 1, freq_len, t_len);
         for j = 1 : N - 1
-            [~, Syx(1, j, :, :), ~] = wcoherence(y(:, 1), x(:, j), 1.0);
+            [~, Syx(1, j, :, :), ~] = wcoherence(y(:, 1), x(:, j), fs);
         end
 
         % ... and for the second signal
         Syy = zeros(1, 1, freq_len, t_len);
-        [~, Syy(1, 1, :, :), ~] = wcoherence(y(:, 1), y(:, 1), 1.0);
+        [~, Syy(1, 1, :, :), ~] = wcoherence(y(:, 1), y(:, 1), fs);
 
-        %% We compute the matrix whose eigenvalues are PCA-related measures 
-        % of coherence and keep the maximum value
+        %% We compute the matrix, whose eigenvalues are PCA-related 
+        % measures of coherence, and keep the maximum value
         %{
         % Way 1 (element-wise)
         for i = 1 : freq_len
@@ -89,23 +87,18 @@ function [evt, ev, freq] = getCanonicalCoherenceW(xx)
 
         Syx_aux = toMatrixArray(Syx);
 
-        aux1 = cellfun(@mtimes, Sxx_aux, Sxy_aux, 'UniformOutput', false);
-        aux2 = cellfun(@mtimes, aux1, Syy_aux, 'UniformOutput', false);
-        UU = cellfun(@mtimes, aux2, Syx_aux, 'UniformOutput', false);
+        aux = cellfun(@mtimes, Sxx_aux, Sxy_aux, 'UniformOutput', false);
+        aux = cellfun(@mtimes, aux, Syy_aux, 'UniformOutput', false);
+        U = cellfun(@mtimes, aux, Syx_aux, 'UniformOutput', false);
         
-        aux = cellfun(@eig, UU, 'UniformOutput', false);
+        aux = cellfun(@eig, U, 'UniformOutput', false);
         aux = cellfun(@real, aux, 'UniformOutput', false);
         ev(:, :, ic) = reshape(cellfun(@max, aux), freq_len, t_len);
         %}
-
-        % Normalisation
-        ev(:, :, ic) = ev(:, :, ic) / max(max(abs(ev(:, :, ic))));
     end
 
     % Finally we compute the total coherence frequency-wise
-    evt = sqrt(prod(ev, 3));
-
-    %toc;    % DEBUG
+    evt = prod(ev, 3) .^ (1.0 / N);
 end
 
 % This auxiliary function reshapes a 4-D array into a sequence of 2-D

@@ -1,9 +1,10 @@
 % This utility provides tests for the canonical coherence analysis 
-% functions 'getCanonicalCoherence()' and 'getCanonicalCoherenceW()'.
+% functions 'getCanonicalCoherence()' and 'getCanonicalCoherenceW()'. Set 
+% the testID parameter to run a certain test.
 clear all;
 
 %% Inits
-testID = 2;
+testID = 3;
 
 if (testID == 1)        % No coherence
     N = 3;              % Number of variates in the vector (multivariate) time series
@@ -16,8 +17,8 @@ if (testID == 1)        % No coherence
     ddx(:, 2) = 0.5 * cos(2.0 * pi * t * fcommon / 2.0) + randn(length(t), 1);
     ddx(:, 3) = cos(2.0 * pi * t * fcommon / 4.0) + randn(length(t), 1);
 elseif (testID == 2)    % Coherence at three different frequencies
-    N = 5;              
-    fs = 10000.0;       
+    N = 3;              
+    fs = 1000.0;       
     t = [0.0 : 1.0 / fs : 1.0 - 1.0 / fs]';
     fcommon = 200.0;    
     
@@ -39,15 +40,21 @@ elseif (testID == 3)    % Coherence at two different frequencies in time-shifted
 end
 
 %% Computing
-[evt, ev, freq] = getCanonicalCoherence(ddx);
-[evt_w, ev_w, freq_w] = getCanonicalCoherenceW(ddx);
+[evt, ev, freq] = getCanonicalCoherence(ddx, fs);
+[evt_w, ev_w, freq_w] = getCanonicalCoherenceW(ddx, fs);
 
 %% Output
 % Fourier-based CCA
 figure;
+semilogx(freq, evt);
+xlabel('\omega');
+ylabel('C(\omega)');
+title('Canonical Coherence Analysis (non-parametric Fourier spectrum estimation)');
+
+figure;
 for i = 1 : N
     subplot(N, 1, i);
-    semilogx(freq * fs, ev(:, i));
+    semilogx(freq, ev(:, i));
     if (i == N)
         xlabel('\omega');
     end
@@ -57,18 +64,23 @@ for i = 1 : N
     end
 end
 
-figure;
-semilogx(freq * fs, evt);
-xlabel('\omega');
-ylabel('C(\omega)');
-title('Canonical Coherence Analysis (non-parametric Fourier spectrum estimation)');
-
 % Wavelet-based CCA
+figure;
+pcolor(t, freq_w, evt_w);
+set(gca, 'YScale', 'log');
+shading flat;
+colorbar;
+xlabel('t');
+ylabel('\omega');
+title('Wavelet CCA, Total Coherence');
+axis xy;
+axis tight;
+
 figure;
 for i = 1 : N
     subplot(N, 1, i);
     
-    pcolor(t, freq_w * fs, ev_w(:, :, i));
+    pcolor(t, freq_w, ev_w(:, :, i));
     set(gca, 'YScale', 'log');
     shading flat;
     colorbar;
@@ -77,19 +89,8 @@ for i = 1 : N
     end
     ylabel('\omega');
     if (i == 1)
-        title('Canonical Coherence Analysis (wavelet spectrum estimation)');
+        title('Wavelet CCA, Partial Coherences');
     end
     axis xy;
     axis tight;    
 end
-
-figure;
-pcolor(t, freq_w * fs, evt_w);
-set(gca, 'YScale', 'log');
-shading flat;
-colorbar;
-xlabel('t');
-ylabel('\omega');
-title('Canonical Coherence Analysis (wavelet spectrum estimation)');
-axis xy;
-axis tight;
