@@ -14,7 +14,7 @@ t = np.arange(0.0, 1.0, 1.0 / fs)
 fcommon = 100.0                         # Base frequency
 c = np.cos(2.0 * np.pi * t * fcommon)
 
-N = 2                                   # Number of variates (1 or 2)
+N = 1                                   # Number of variates (1 or 2)
 x = np.ndarray((len(t), N))
 for i in range(1, N + 1):
     x[:, i - 1] = c + np.random.randn(len(t))
