@@ -1,23 +1,22 @@
 #!/home/ubuntu/miniconda/bin/python
 #
-# This code implements a modification of the first-order detrended fluctuation analysis (DFA) method
-# originally described in [1]. For more details on the DFA and Hurst analysis techniques, please refer to [2, 3].
+# This code implements a modification of the first-order unifractal analysis algorithm originally described in [1].
+# It covers both the detrended fluctuation analysis (DFA) and the Hurst (a.k.a. R/S) analysis methods. For more details
+# on the DFA and Hurst analysis methods, please refer to [2, 3].
 #
-# INPUT:
-# dx              - a time series of increments of the physical observable 'x(t)', of the length equal to
-#                   an integer power of two greater than two (i.e. 4, 8, 16, 32, etc.)
-# normType_p      - any real greater than or equal to one, specifying the p-norm
-# isDFA           - a boolean value prescribing to use the DFA-based algorithm (1) or
-#                   the standard Hurst (a.k.a. R/S) analysis (0)
-# normType_q      - any real greater than or equal to one, specifying the q-norm
+# At the input, 'dx' is a time series of increments of the physical observable 'x(t)', of the length equal to an
+# integer power of two greater than two (i.e. 4, 8, 16, 32, etc.), 'normType_p' is any real greater than or
+# equal to one specifying the p-norm, 'isDFA' is a boolean value prescribing to use either the DFA-based algorithm or
+# the standard Hurst (a.k.a. R/S) analysis, 'normType_q' is any real greater than or equal to one specifying the q-norm.
 #
-# OUTPUT:
-# timeMeasure     - the time measure of the data's support at different scales
-# meanDataMeasure - the data measure at different scales
-# scales          - the scales at which the data measure is computed
+# At the output, 'timeMeasure' is the time measure of the data's support at different scales, 'meanDataMeasure' is
+# the data measure at different scales, while 'scales' is the scales at which the data measure is computed.
 #
 # The conventional way of using the output values is to plot the data measure vs the scales; the time measure,
-# being the inverse quantity to the scales, is computed for an alternative representation, and may be ignored.
+# being the inverse quantity to the scales, is computed for an alternative representation and may be ignored.
+#
+# The requirement to have a power-of-two data length is aimed at avoiding inaccuracies when computing the data measure
+# on different time scales.
 #
 # REFERENCES:
 # [1] D.M. Filatov, J. Stat. Phys., 165 (2016) 681-692. DOI: 10.1007/s10955-016-1641-6.
@@ -31,7 +30,7 @@ import numpy as np
 
 def getHurstByUpscaling(dx, normType_p = np.inf, isDFA = 1, normType_q = 1.0):
     ## Some initialiation
-    dx_len = np.int(len(dx))
+    dx_len = len(dx)
 
     # We have to reserve the most major scale for shifts, so we divide the data
     # length by two. (As a result, the time measure starts from 2.0, not from
@@ -40,7 +39,7 @@ def getHurstByUpscaling(dx, normType_p = np.inf, isDFA = 1, normType_q = 1.0):
 
     dx_shift = np.int(dx_len / 2)
 
-    nScales = np.int(np.round(np.log(dx_len * 1.0) / np.log(2.0)))    # Number of scales involved. P.S. We use 'round()' to prevent possible malcomputing of the logarithms
+    nScales = np.int(np.round(np.log2(dx_len)))    # Number of scales involved. P.S. We use 'round()' to prevent possible malcomputing of the logarithms
     j = 2 ** (np.arange(1, nScales + 1) - 1) - 1
 
     meanDataMeasure = np.zeros(nScales)
