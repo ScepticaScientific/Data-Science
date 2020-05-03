@@ -1,0 +1,68 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Diffusion3D - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\DENIS\LOCALS~1\Temp\RSP5BC.tmp" with contents
+[
+/check:bounds /compile_only /define:"MPI" /include:"Release/" /nologo /real_size:64 /warn:nofileopt /module:"Release/" /object:"Release/" 
+"G:\Objectives\Numerical Models\Diffusion3D\fRHS.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\GetMass.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\kron.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\Test.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\SwapYX.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\SwapXY.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\SaveToDisk.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\isDiagPredom.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\DoInY.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\DoInX.f90"
+"G:\Objectives\Numerical Models\Diffusion3D\DoInR.f90"
+]
+Creating temporary file "C:\DOCUME~1\DENIS\LOCALS~1\Temp\RSP5BD.tmp" with contents
+[
+kernel32.lib /nologo /stack:0x3b9aca00 /subsystem:console /incremental:no /pdb:"Release/Diffusion3D.pdb" /machine:I386 /out:"Release/Diffusion3D.exe" 
+".\Release\DoInR.obj"
+".\Release\DoInX.obj"
+".\Release\DoInY.obj"
+".\Release\fRHS.obj"
+".\Release\GetMass.obj"
+".\Release\isDiagPredom.obj"
+".\Release\kron.obj"
+".\Release\SaveToDisk.obj"
+".\Release\SwapXY.obj"
+".\Release\SwapYX.obj"
+".\Release\Test.obj"
+"C:\Program Files\DevStudio\DF\IMSL\LIB\SMATHD.LIB"
+"C:\Program Files\DevStudio\DF\IMSL\LIB\SF90MP.LIB"
+"C:\Program Files\Microsoft HPC Pack 2008 R2\Lib\i386\msmpi.lib"
+"C:\Program Files\Microsoft HPC Pack 2008 R2\Lib\i386\msmpifms.lib"
+"C:\Program Files\Microsoft HPC Pack 2008 R2\Lib\i386\msmpifec.lib"
+"C:\Program Files\Microsoft HPC Pack 2008 R2\Lib\i386\msmpifes.lib"
+"C:\Program Files\Microsoft HPC Pack 2008 R2\Lib\i386\msmpifmc.lib"
+]
+Creating command line "link.exe @C:\DOCUME~1\DENIS\LOCALS~1\Temp\RSP5BD.tmp"
+<h3>Output Window</h3>
+Compiling Fortran...
+G:\Objectives\Numerical Models\Diffusion3D\fRHS.f90
+G:\Objectives\Numerical Models\Diffusion3D\GetMass.f90
+G:\Objectives\Numerical Models\Diffusion3D\kron.f90
+G:\Objectives\Numerical Models\Diffusion3D\Test.f90
+G:\Objectives\Numerical Models\Diffusion3D\SwapYX.f90
+G:\Objectives\Numerical Models\Diffusion3D\SwapXY.f90
+G:\Objectives\Numerical Models\Diffusion3D\SaveToDisk.f90
+G:\Objectives\Numerical Models\Diffusion3D\isDiagPredom.f90
+G:\Objectives\Numerical Models\Diffusion3D\DoInY.f90
+G:\Objectives\Numerical Models\Diffusion3D\DoInX.f90
+G:\Objectives\Numerical Models\Diffusion3D\DoInR.f90
+Linking...
+
+
+
+<h3>Results</h3>
+Diffusion3D.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
