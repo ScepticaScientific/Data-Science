@@ -1,7 +1,7 @@
 #!/home/ubuntu/miniconda/bin/python
 #
 # This function determines the optimal linear approximations of the data measure using two segments and returns
-# the index of the corresponding boundary scale (a.k.a. crossover), the boundary scale itself, as well as the
+# the index of the corresponding boundary scale, the boundary scale itself (a.k.a. crossover), as well as the
 # unifractal characteristics at the major and minor scales. For examples of using crossovers, see [1, 2].
 #
 # At the input, 'timeMeasure' is a time measure at different scales, while 'dataMeasure' is a data measure at the same
