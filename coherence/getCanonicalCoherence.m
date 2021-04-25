@@ -1,17 +1,19 @@
-function [evt, ev, freq] = getCanonicalCoherence(ddx, fs)
-% [evt, ev, freq] = getCanonicalCoherence(ddx)
+function [evt, ev, freq] = getCanonicalCoherence(ddx, fs, isInfo)
+% [evt, ev, freq] = getCanonicalCoherence(ddx, fs, isInfo)
 %
 % This code implements the canonical coherence analysis of multivariate 
 % data. The computation is performed using a non-parametric Fourier 
 % spectrum estimation. For details, please refer to [1, 2].
 %
-% At the input, 'ddx' is a multivariate time series of second increments of 
-% the physical observable 'ddx(t) = (ddx_1(t), ..., ddx_N(t))'.
+% At the input, 'ddx' is a multivariate time series of the second 
+% increments of the physical observable 'ddx(t) = (ddx_1(t), ...,
+% ddx_N(t))', 'fs' is the sample rate (optional), 'isInfo' is the flag
+% prescribing to output a message for each variate processed (optional).
 %
 % At the output, 'evt' is the total coherence coefficient over the 
-% frequency range, 'ev' is the array of partial coherence coefficients over 
-% the frequency range, 'freq' is the frequency range over which the 
-% coherence spectrum is computed.
+% frequency range, 'ev' is the array of the partial coherence coefficients 
+% over the frequency range, 'freq' is the frequency range over which the 
+% coherence spectrum has been computed.
 %
 % REFERENCES:
 % [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and 
@@ -24,6 +26,13 @@ function [evt, ev, freq] = getCanonicalCoherence(ddx, fs)
 % original repository it was downloaded from.
 
     %% Auxiliaries
+    if (nargin == 1)
+        fs = 1.0;
+        isInfo = false;
+    elseif (nargin == 2)
+        isInfo = false;
+    end
+    
     N = size(ddx, 2);    % Number of variates in the vector time series
 
     % Determining the frequency range
@@ -93,7 +102,12 @@ function [evt, ev, freq] = getCanonicalCoherence(ddx, fs)
         aux = cellfun(@eig, U, 'UniformOutput', false);
         aux = cellfun(@real, aux, 'UniformOutput', false);
         ev(:, ic) = cellfun(@max, aux);
-        %}        
+        %}
+        
+        % Informational message to the standard output
+        if (isInfo)
+            fprintf('CCAW: variate %d of %d processed\n', ic, N);
+        end
     end
 
     % Finally we compute the total coherence frequency-wise
