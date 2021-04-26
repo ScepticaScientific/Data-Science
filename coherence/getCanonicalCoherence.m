@@ -106,7 +106,7 @@ function [evt, ev, freq] = getCanonicalCoherence(ddx, fs, isInfo)
         
         % Informational message to the standard output
         if (isInfo)
-            fprintf('CCAW: variate %d of %d processed\n', ic, N);
+            fprintf('CCA: variate %d of %d processed\n', ic, N);
         end
     end
 
