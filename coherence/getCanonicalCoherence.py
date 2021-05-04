@@ -1,14 +1,19 @@
 #!/home/ubuntu/miniconda/bin/python
 #
 # This code implements canonical coherence analysis (CCA) of multivariate data. The computation is performed using
-# an accurate non-parametric Fourier spectrum estimation different from the standard Python function scipy.signal.csd().
-# For details on CCA, please refer to [1-3].
+# an accurate non-parametric Fourier spectrum estimation that differs from the standard Python function
+# scipy.signal.csd(). For details on CCA, please refer to [1-3].
 #
-# At the input, 'ddx' is a multivariate time series of the physical observable 'ddx(t) = (ddx_1(t), ..., ddx_N(t))',
-# while 'fs' is the sampling rate. The time series are to be provided column-wise for each variate 'ddx_i(t)'.
+# At the input:
+#   - 'ddx' is a multivariate stationary time series (usually the second derivative of a physical observable 'x(t)')
+#     'ddx(t) = (ddx_1(t), ..., ddx_N(t))'; the variates are provided column-wise
+#   - 'fs' is the sampling rate (optional)
+#   - 'isInfo' is the flag prescribing to output a message for each variate processed (optional).
 #
-# At the output, 'evt' is the total coherence spectrum, 'ev' is the array of partial coherence spectra, while 'freq'
-# is the the frequency range over which the coherence spectra are computed.
+# At the output:
+#   - 'evt' is the total coherence spectrum (the coherence coefficient between 0.0 and 1.0)
+#   - 'ev' is the array of the partial coherence coefficients
+#   - 'freq' is the frequency range over which the coherence spectra have been computed.
 #
 # REFERENCES:
 # [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and Ecological Monitoring, Nauka, Moscow, 2007.
@@ -26,7 +31,7 @@ import sys
 sys.path.append('../utils')
 from getPowerSpectrum import getPowerSpectrum
 
-def getCanonicalCoherence(ddx, fs):
+def getCanonicalCoherence(ddx, fs = 1.0, isInfo = False):
     ## Initialisation
     N = ddx.shape[2 - 1]     # Number of variates in the vector time series
 
@@ -80,6 +85,10 @@ def getCanonicalCoherence(ddx, fs):
         aux = np.asarray([linalg.eig(Ui)[1 - 1] for Ui in U])
         aux = np.asarray([np.real(auxi) for auxi in aux])
         ev[:, ic - 1] = np.asarray([max(auxi) for auxi in aux])
+
+        # Informational message to the standard output
+        if (isInfo):
+            print('CCA: variate %d of %d processed' % (ic, N))
 
     # Finally we compute the total coherence frequency-wise
     evt = np.prod(ev, axis = 2 - 1) ** (1.0 / N)

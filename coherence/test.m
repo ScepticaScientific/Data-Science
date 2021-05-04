@@ -4,7 +4,7 @@
 clear all;
 
 %% Inits
-testID = 3;
+testID = 4;
 
 if (testID == 1)        % No coherence
     N = 3;              % Number of variates in the vector (multivariate) time series
@@ -16,14 +16,26 @@ if (testID == 1)        % No coherence
     ddx(:, 1) = cos(2.0 * pi * t * fcommon) + randn(length(t), 1);
     ddx(:, 2) = 0.5 * cos(2.0 * pi * t * fcommon / 2.0) + randn(length(t), 1);
     ddx(:, 3) = cos(2.0 * pi * t * fcommon / 4.0) + randn(length(t), 1);
-elseif (testID == 2)    % Coherence at three different frequencies
-    N = 3;              
+elseif (testID == 2)    % Coherence at two different frequencies
+    N = 2;              
     fs = 1000.0;       
     t = [0.0 : 1.0 / fs : 1.0 - 1.0 / fs]';
     fcommon = 200.0;    
     
-    ddx = repmat(1.0 * cos(2.0 * pi * t * fcommon) + 0.5 * cos(2.0 * pi * t * fcommon / 2.0) + 1.0 * cos(2.0 * pi * t * fcommon / 4.0), 1, N) + randn(length(t), N);
+    ddx = repmat(1.0 * cos(2.0 * pi * t * fcommon) + 1.0 * cos(2.0 * pi * t * fcommon / 4.0), 1, N) + randn(length(t), N);
 elseif (testID == 3)    % Coherence at two different frequencies in time-shifted time ranges
+    N = 2;
+    fs = 1000.0;
+    t = [0.0 : 1.0 / fs : 2.0 - 1.0 / fs]';
+    fcommon1 = 10.0;
+    fcommon2 = 50.0;
+    
+    ddx = zeros(length(t), N);
+    ddx(:, 1) = cos(2.0 * pi * fcommon1 * t) .* (t >= 0.5 & t < 1.1) + ...
+                cos(2.0 * pi * fcommon2 * t) .* (t >= 0.2 & t < 1.4) + 0.25 * randn(size(t));
+    ddx(:, 2) = sin(2.0 * pi * fcommon1 * t) .* (t >= 0.6 & t < 1.2) + ...
+                sin(2.0 * pi * fcommon2 * t) .* (t >= 0.4 & t < 1.6) + 0.35 * randn(size(t));
+elseif (testID == 4)    % Coherence at one to two different frequencies in time-shifted time ranges
     N = 3;
     fs = 1000.0;
     t = [0.0 : 1.0 / fs : 2.0 - 1.0 / fs]';
@@ -39,9 +51,11 @@ elseif (testID == 3)    % Coherence at two different frequencies in time-shifted
                 sin(2.0 * pi * fcommon2 * t) .* (t >= 1.3 & t < 1.7) + 0.15 * randn(size(t));
 end
 
+energyLimit = 0.95;
+
 %% Computing
-[evt, ev, freq] = getCanonicalCoherence(ddx, fs);
-[evt_w, ev_w, freq_w] = getCanonicalCoherenceW(ddx, fs);
+[evt, ev, freq] = getCanonicalCoherence(ddx, fs, 1);
+[evt_w, ev_w, freq_w, coi, timeBorders] = getCanonicalCoherenceW(ddx, fs, [t(floor(end / 4)) t(floor(4 * end / 5))], energyLimit);
 
 %% Output
 % Fourier-based CCA
@@ -75,6 +89,19 @@ ylabel('\omega');
 title('Wavelet CCA, Total Coherence');
 axis xy;
 axis tight;
+hold on;
+plot(t, coi, 'w--');
+
+if (exist('timeBorders', 'var'))
+    nb = size(timeBorders, 3);
+    for ib = 1 : nb
+        % We cut off the time moments (if any) which are out of the period 
+        % of observation
+        timeBorders(timeBorders(:, 1, ib) < t(1), 1, ib) = NaN;
+        timeBorders(timeBorders(:, 2, ib) > t(end), 2, ib) = NaN;
+        plot(timeBorders(:, 1, ib), freq_w, 'w--', timeBorders(:, 2, ib), freq_w, 'w--');
+    end
+end
 
 figure;
 for i = 1 : N
@@ -92,5 +119,13 @@ for i = 1 : N
         title('Wavelet CCA, Partial Coherences');
     end
     axis xy;
-    axis tight;    
+    axis tight;
+    hold on;
+    plot(t, coi, 'w--');
+    
+    if (exist('timeBorders', 'var'))
+        for ib = 1 : nb
+            plot(timeBorders(:, 1, ib), freq_w, 'w--', timeBorders(:, 2, ib), freq_w, 'w--');
+        end
+    end
 end

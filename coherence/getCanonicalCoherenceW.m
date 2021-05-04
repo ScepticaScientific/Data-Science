@@ -1,19 +1,38 @@
-function [evt, ev, freq] = getCanonicalCoherenceW(ddx, fs, isInfo)
-% [evt, ev, freq] = getCanonicalCoherenceW(ddx, fs, isInfo)
+function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThreshold, isInfo)
+% varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThreshold, isInfo)
 %
 % This code implements canonical coherence analysis of multivariate 
 % data. The computation is performed using a wavelet spectrum estimation. 
 % For details, please refer to [1].
 %
-% At the input, 'ddx' is a multivariate time series of the second 
-% increments of the physical observable 'ddx(t) = (ddx_1(t), ..., 
-% ddx_N(t))', 'fs' is the sample rate (optional), 'isInfo' is the flag
-% prescribing to output a message for each variate processed (optional).
+% At the input:
+%   - 'ddx' is a multivariate stationary time series (usually the second 
+%     derivative of a physical observable 'x(t)') 'ddx(t) = (ddx_1(t), ..., 
+%     ddx_N(t))'; the variates are provided column-wise
+%   - 'fs' is the sampling rate (optional)
+%   - 'isInfo' is the flag prescribing to output a message for each variate 
+%     processed (optional).
+% 
+% Besides, for an array of time moments this function allows to determine 
+% the left and right borders, out of which the daughter wavelet, while 
+% moving in time at a fixed scale, does not involve those time moments' 
+% data samples for the computation of CWT:
+%   - 'timesOfInterest' is a row vector of the time moments (these are 
+%     usually extreme events reflected in the data) for which the left and 
+%     right borders are wanted (optional)
+%   - 'energyThreshold' is the probability with which the daughter wavelet
+%     does not affect the time moments' data samples (optional).
 %
-% At the output, 'evt' is the total coherence spectrum (the coherence
-% coefficient between 0.0 and 1.0), 'ev' is the array of the partial 
-% coherence coefficients, while 'freq' is the frequency range over which 
-% the coherence has been computed.
+% At the output:
+%   - 'evt' is the total coherence spectrum (the coherence coefficient 
+%     between 0.0 and 1.0)
+%   - 'ev' is the array of the partial coherence coefficients
+%   - 'freq' is the scale-related frequency range over which the coherence 
+%     has been computed
+%   - 'coi' is the cone of influence
+%   - 'timeBorders' are borders of the energy cones out of which the above-
+%     specified time moments' data samples are not affected by the daughter 
+%     wavelet (optional).
 %
 % REFERENCES:
 % [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and 
@@ -26,8 +45,14 @@ function [evt, ev, freq] = getCanonicalCoherenceW(ddx, fs, isInfo)
     %% Auxiliaries
     if (nargin == 1)
         fs = 1.0;
-        isInfo = false;
+        energyThreshold = [];
+        timesOfInterest = [];
+        isInfo = false;        
     elseif (nargin == 2)
+        energyThreshold = [];
+        timesOfInterest = [];
+        isInfo = false;        
+    elseif (nargin == 4)
         isInfo = false;
     end
     
@@ -35,10 +60,13 @@ function [evt, ev, freq] = getCanonicalCoherenceW(ddx, fs, isInfo)
 
     % Determining the frequency range ...
     [~, psd_freq] = pwelch(ddx(:, 1), [], [], [], fs);
-    % ... for computing a consistent one for the CCWA
-    [~, aux, freq] = wcoherence(ddx(:, 1), ddx(:, 1), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+    % ... for computing a consistent one for the CCWA. We also obtain the
+    % cone of influence ...
+    [~, aux, freq, coi] = wcoherence(ddx(:, 1), ddx(:, 1), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
     freq_len = length(freq);
-    
+    % ... and correct the values outside the minimum frequency
+    coi(coi < freq(end)) = freq(end);
+        
     t_len = size(aux, 2);
 
     %% Computing
@@ -97,7 +125,7 @@ function [evt, ev, freq] = getCanonicalCoherenceW(ddx, fs, isInfo)
         Syy_aux = cellfun(@inv, Syy_aux, 'UniformOutput', false);
 
         Syx_aux = toMatrixArray(Syx);
-
+        
         aux = cellfun(@mtimes, Sxx_aux, Sxy_aux, 'UniformOutput', false);
         aux = cellfun(@mtimes, aux, Syy_aux, 'UniformOutput', false);
         U = cellfun(@mtimes, aux, Syx_aux, 'UniformOutput', false);
@@ -115,6 +143,17 @@ function [evt, ev, freq] = getCanonicalCoherenceW(ddx, fs, isInfo)
 
     % Finally we compute the total coherence frequency-wise
     evt = prod(ev, 3) .^ (1.0 / N);
+    
+    varargout{1} = evt;
+    varargout{2} = ev;
+    varargout{3} = freq;
+    varargout{4} = coi;
+
+    % For the particular time moments (if any) we obtain the energy cones
+    if (~isempty(energyThreshold))
+        timeBorders = getBorders(freq, energyThreshold, timesOfInterest, fs);
+        varargout{5} = timeBorders;
+    end
 end
 
 % This auxiliary function reshapes a 4-D array into a sequence of 2-D
@@ -123,3 +162,20 @@ function res = toMatrixArray(mtrx)
     aux = reshape(mtrx, size(mtrx, 1), size(mtrx, 4) * size(mtrx, 3) * size(mtrx, 2)); 
     res = mat2cell(aux, size(mtrx, 1), ones(1, size(mtrx, 4) * size(mtrx, 3)) * size(mtrx, 2));
 end    
+
+% This function computes the time borders (or energy cones) out of which 
+% the moving daughter wavelet does not affect the specific time moments
+function timeBorders = getBorders(freq, energyThreshold, timesOfInterest, fs)
+    waveletSigma = 6.0;     % The Morlet wavelet parameter 'sigma' used by MATLAB
+    FourierFactor = 2.0 * pi / waveletSigma;
+
+    scales = 1 * fs ./ freq / FourierFactor;    % In samples
+    t = erfinv(energyThreshold);                % In relative units
+    t_deltas = t * scales / fs;                 % In seconds
+
+    N = length(timesOfInterest);
+    timeBorders = zeros(length(freq), 2, N);
+    for i = 1 : N
+        timeBorders(:, :, i) = [timesOfInterest(i) - t_deltas timesOfInterest(i) + t_deltas];
+    end
+end

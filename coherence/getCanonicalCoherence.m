@@ -5,15 +5,19 @@ function [evt, ev, freq] = getCanonicalCoherence(ddx, fs, isInfo)
 % data. The computation is performed using a non-parametric Fourier 
 % spectrum estimation. For details, please refer to [1, 2].
 %
-% At the input, 'ddx' is a multivariate time series of the second 
-% increments of the physical observable 'ddx(t) = (ddx_1(t), ...,
-% ddx_N(t))', 'fs' is the sample rate (optional), 'isInfo' is the flag
-% prescribing to output a message for each variate processed (optional).
-%
-% At the output, 'evt' is the total coherence coefficient over the 
-% frequency range, 'ev' is the array of the partial coherence coefficients 
-% over the frequency range, 'freq' is the frequency range over which the 
-% coherence spectrum has been computed.
+% At the input:
+%   - 'ddx' is a multivariate stationary time series (usually the second 
+%     derivative of a physical observable 'x(t)') 'ddx(t) = (ddx_1(t), ..., 
+%     ddx_N(t))'; the variates are provided column-wise
+%   - 'fs' is the sampling rate (optional)
+%   - 'isInfo' is the flag prescribing to output a message for each variate 
+%     processed (optional).
+% 
+% At the output:
+%   - 'evt' is the total coherence spectrum (the coherence coefficient 
+%     between 0.0 and 1.0)
+%   - 'ev' is the array of the partial coherence coefficients
+%   - 'freq' is the frequency range over which the coherence is computed.
 %
 % REFERENCES:
 % [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and 
