@@ -120,7 +120,7 @@ def toMatrixArray(mtrx, nrows, ncols):
 
 # Computing the time borders (or energy cones) for specific time moments
 def getBorders(freq, energyThreshold, timesOfInterest, fs):
-    sigma = 6.0     # The Morlet wavelet parameter 'sigma' (see function MorletCWT() in file '../utils/getPowerSpectrum.py')
+    sigma = 6.0     # The Morlet wavelet parameter 'sigma' (see function MorletCWT() in file '../utils/getPowerSpectrumW.py')
     FourierFactor = 2.0 * np.pi / sigma
 
     scales = 1 * fs / freq / FourierFactor      # In samples

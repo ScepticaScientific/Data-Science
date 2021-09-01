@@ -4,8 +4,8 @@
 # The code is based on MATLAB's functions pwelch() and cpsd().
 #
 # At the input, 'x' is a uni- or bivariate time series of the physical observables 'x_1(t)' and, possibly, 'x_2(t)',
-# while 'fs' is the sampling rate. If 'x_2(t)' is omitted then the auto-spectrum of 'x_1(t)' is computed; otherwise
-# the cross-spectrum between 'x_1(t)' and 'x_2(t)' is computed. The time series are to be provided column-wise
+# while 'fs' is the sampling rate (optional). If 'x_2(t)' is omitted then the auto-spectrum of 'x_1(t)' is computed;
+# otherwise the cross-spectrum between 'x_1(t)' and 'x_2(t)' is computed. The time series are to be provided column-wise
 # for each variate.
 #
 # At the output, 'Ps' is the power spectrum, while 'freq' is the frequency range over which the spectrum is computed.
