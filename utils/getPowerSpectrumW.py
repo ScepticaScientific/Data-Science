@@ -1,8 +1,8 @@
 #!/home/ubuntu/miniconda/bin/python
 #
 # This code implements the computation of the continuous wavelet auto- or cross- power spectrum. It is based on
-# MATLAB's function cwtft() (see also wcoherence() there). A Morlet wavelet is employed. For details, please refer
-# to [1].
+# MATLAB's function cwtft() (see also wcoherence() there). The Morlet wavelet of the time-frequency trade-off
+# 'sigma = 6' is employed. For details, please refer to [1, 2].
 #
 # At the input, 'x' is a uni- or bivariate time series of the physical observables 'x_1(t)' and, possibly, 'x_2(t)',
 # 'fs' is the sampling rate (optional), while 'isSmoothing' is a parameter prescribing to smooth the spectrum (optional,
@@ -19,6 +19,7 @@
 #
 # REFERENCES:
 # [1] C. Torrence and G.P. Compo, Bull. Am. Meteorol. Soc., 79 (1998) 61-78.
+# [2] Michael X. Cohen, Parameters of Morlet wavelet, https://www.youtube.com/watch?v=LMqTM7EYlqY
 #
 # The end user is granted perpetual permission to reproduce, adapt, and/or distribute this code, provided that
 # an appropriate link is given to the original repository it was downloaded from.
