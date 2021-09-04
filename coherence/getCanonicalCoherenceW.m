@@ -1,15 +1,16 @@
-function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThreshold, isInfo)
-% varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThreshold, isInfo)
+function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThreshold, waveletSigma, isInfo)
+% varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThreshold, waveletSigma, isInfo)
 %
 % This code implements canonical coherence analysis of multivariate 
 % data. The computation is performed using a wavelet spectrum estimation. 
-% For details, please refer to [1].
+% For details, please refer to [1-4].
 %
 % At the input:
 %   - 'ddx' is a multivariate stationary time series (usually the second 
 %     derivative of a physical observable 'x(t)') 'ddx(t) = (ddx_1(t), ..., 
 %     ddx_N(t))'; the variates are provided column-wise
 %   - 'fs' is the sampling rate (optional)
+%   - 'waveletSigma' is the time-frequency resolution (optional)
 %   - 'isInfo' is the flag prescribing to output a message for each variate 
 %     processed (optional).
 % 
@@ -37,6 +38,11 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
 % REFERENCES:
 % [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and 
 %     Ecological Monitoring, Nauka, Moscow, 2007.
+% [2] J. Ashmead, Quanta, 1 (2012) 58-70.
+% [3] C. Torrence and G.P. Compo, Bull. Am. Meteorol. Soc., 79 (1998)
+%     61-78.
+% [4] Michael X. Cohen, Parameters of Morlet wavelet (time-frequency
+%     trade-off), https://www.youtube.com/watch?v=LMqTM7EYlqY
 %
 % The end user is granted perpetual permission to reproduce, adapt, and/or 
 % distribute this code, provided that an appropriate link is given to the 
@@ -45,28 +51,42 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
     %% Auxiliaries
     if (nargin == 1)
         fs = 1.0;
-        energyThreshold = [];
         timesOfInterest = [];
+        energyThreshold = [];
+        waveletSigma = [];
         isInfo = false;        
     elseif (nargin == 2)
-        energyThreshold = [];
         timesOfInterest = [];
+        energyThreshold = [];
+        waveletSigma = [];
+        isInfo = false;        
+    elseif (nargin == 3)
+        energyThreshold = [];
+        waveletSigma = [];
         isInfo = false;        
     elseif (nargin == 4)
+        waveletSigma = [];
+        isInfo = false;
+    elseif (nargin == 5)
         isInfo = false;
     end
-    
+
     N = size(ddx, 2);    % Number of variates in the vector time series
 
-    % Determining the frequency range ...
-    [~, psd_freq] = pwelch(ddx(:, 1), [], [], [], fs);
-    % ... for computing a consistent one for the CCWA. We also obtain the
-    % cone of influence ...
-    [~, aux, freq, coi] = wcoherence(ddx(:, 1), ddx(:, 1), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+    % Determining the frequency range for subsequent computing a 
+    % consistent one for the CCWA
+    [~, psd_freq] = pwelch(ddx(:, 1), [], [], [], fs);            
+    
+    % We obtain the cone of influence ...
+    if (isempty(waveletSigma))
+        [~, aux, freq, coi] = wcoherence(ddx(:, 1), ddx(:, 1), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);     % Automatic time-frequency trade-off
+    else
+        [aux, freq, coi] = getPowerSpectrumW(ddx(:, [1 1]), fs, waveletSigma, [psd_freq(1) psd_freq(end)]);             % User-defined time-frequency trade-off
+    end
     freq_len = length(freq);
     % ... and correct the values outside the minimum frequency
     coi(coi < freq(end)) = freq(end);
-        
+
     t_len = size(aux, 2);
 
     %% Computing
@@ -80,26 +100,58 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
         %% We compute the spectral matrices ...
         % ... for the first signal, ...
         Sxx = zeros(N - 1, N - 1, freq_len, t_len);
-        for i = 1 : N - 1
-            for j = 1 : N - 1
-                [~, Sxx(i, j, :, :), ~] = wcoherence(x(:, i), x(:, j), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+        if (isempty(waveletSigma))
+            % Automatic time-frequency trade-off
+            for i = 1 : N - 1
+                for j = 1 : N - 1
+                    [~, Sxx(i, j, :, :), ~] = wcoherence(x(:, i), x(:, j), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+                end
+            end
+        else
+            % User-defined time-frequency trade-off
+            for i = 1 : N - 1
+                for j = 1 : N - 1
+                    [Sxx(i, j, :, :), ~, ~] = getPowerSpectrumW(x(:, [i j]), fs, waveletSigma, [psd_freq(1) psd_freq(end)]);
+                end
             end
         end
 
         % ... for the mixture of the first and second signals, ...
         Sxy = zeros(N - 1, 1, freq_len, t_len);
-        for i = 1 : N - 1
-            [~, Sxy(i, 1, :, :), ~] = wcoherence(x(:, i), y(:, 1), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+        if (isempty(waveletSigma))
+            % Automatic time-frequency trade-off
+            for i = 1 : N - 1
+                [~, Sxy(i, 1, :, :), ~] = wcoherence(x(:, i), y(:, 1), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+            end
+        else
+            % User-defined time-frequency trade-off
+            for i = 1 : N - 1
+                [Sxy(i, 1, :, :), ~, ~] = getPowerSpectrumW([x(:, i) y(:, 1)], fs, waveletSigma, [psd_freq(1) psd_freq(end)]);
+            end
         end
 
         Syx = zeros(1, N - 1, freq_len, t_len);
-        for j = 1 : N - 1
-            [~, Syx(1, j, :, :), ~] = wcoherence(y(:, 1), x(:, j), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+        if (isempty(waveletSigma))
+            % Automatic time-frequency trade-off
+            for j = 1 : N - 1
+                [~, Syx(1, j, :, :), ~] = wcoherence(y(:, 1), x(:, j), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+            end
+        else
+            % User-defined time-frequency trade-off
+            for j = 1 : N - 1
+                [Syx(1, j, :, :), ~, ~] = getPowerSpectrumW([y(:, 1) x(:, j)], fs, waveletSigma, [psd_freq(1) psd_freq(end)]);
+            end
         end
 
         % ... and for the second signal
         Syy = zeros(1, 1, freq_len, t_len);
-        [~, Syy(1, 1, :, :), ~] = wcoherence(y(:, 1), y(:, 1), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+        if (isempty(waveletSigma))
+            % Automatic time-frequency trade-off
+            [~, Syy(1, 1, :, :), ~] = wcoherence(y(:, 1), y(:, 1), fs, 'FrequencyLimits', [psd_freq(1) psd_freq(end)]);
+        else
+            % User-defined time-frequency trade-off
+            [Syy(1, 1, :, :), ~, ~] = getPowerSpectrumW([y(:, 1) y(:, 1)], fs, waveletSigma, [psd_freq(1) psd_freq(end)]);
+        end
 
         %% We compute the matrix, whose eigenvalues are PCA-related 
         % measures of coherence, and keep the maximum value
@@ -137,7 +189,11 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
         
         % Informational message to the standard output
         if (isInfo)
-            fprintf('CCWA: variate %d of %d processed\n', ic, N);
+            if (isempty(waveletSigma))
+                fprintf('CCWA (automatic time-frequency trade-off): variate %d of %d processed\n', ic, N);
+            else
+                fprintf('CCWA (user-defined time-frequency trade-off): variate %d of %d processed\n', ic, N);
+            end
         end
     end
 
@@ -151,7 +207,7 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
 
     % For the particular time moments (if any) we obtain the energy cones
     if (~isempty(energyThreshold))
-        timeBorders = getBorders(freq, energyThreshold, timesOfInterest, fs);
+        timeBorders = getBorders(freq, energyThreshold, timesOfInterest, fs, waveletSigma);
         varargout{5} = timeBorders;
     end
 end
@@ -165,12 +221,15 @@ end
 
 % This function computes the time borders (or energy cones) out of which 
 % the moving daughter wavelet does not affect the specific time moments
-function timeBorders = getBorders(freq, energyThreshold, timesOfInterest, fs)
-    waveletSigma = 6.0;     % The Morlet wavelet parameter 'sigma' used by MATLAB
-    FourierFactor = 2.0 * pi / waveletSigma;
+function timeBorders = getBorders(freq, energyThreshold, timesOfInterest, fs, waveletSigma)
+    if (isempty(waveletSigma))
+        waveletSigma = 6.0;                     % The Morlet wavelet parameter 'sigma'
+    end
 
-    scales = 1 * fs ./ freq / FourierFactor;    % In samples
-    t = erfinv(energyThreshold);                % In relative units
+    waveletFreq = waveletSigma / (2.0 * pi);    % The frequency of the sine harmonic of the Morlet wavelet, a constant, in hertz (or in cycles per second)    
+
+    scales = waveletFreq * fs ./ freq * 1.0;    % In relative units
+    t = 1.0 * erfinv(energyThreshold);          % In samples (samples * relative units)
     t_deltas = t * scales / fs;                 % In seconds
 
     N = length(timesOfInterest);
