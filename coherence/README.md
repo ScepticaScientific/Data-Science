@@ -2,7 +2,7 @@
 This folder contains utilities implementing canonical coherence analysis (CCA) methods. To get familiar, run the corresponding `test.*` files.
 
 ### Multivariate CCAs
-These functions realise multivariate CCAs when the number of scalar time series in a multivariate dataset is any natural, not necessarily two. For more details on multivariate CCAs, please refer to [1-3].
+These functions realise multivariate Fourier- and wavelet-based CCAs when the number of scalar time series in a multivariate dataset is any natural, not necessarily two. For wavelet-based CCA complex-valued Morlet wavelets of arbitrary, user-specified time-frequency resolution are used. For more details on multivariate CCAs, please refer to [1-3].
 
 ### Technical issues
 The Python Fourier CCA code involves calling the function `getPowerSpectrum()` from `../utils`. The code of `getPowerSpectrum()` ensures an accurate computation of the power spectra of multivariate datasets regardless of the length of the time series. The function `getPowerSpectrum()` was developed once the standard Python function `scipy.signal.csd()` had been found to provide inaccurate results on long time series containing 10,000+ samples each.
