@@ -2,8 +2,8 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
 % varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThreshold, waveletSigma, isInfo)
 %
 % This code implements canonical coherence analysis of multivariate 
-% data. The computation is performed using a wavelet spectrum estimation. 
-% For details, please refer to [1-4].
+% data. The estimation of auto- and cross-spectra is based on
+% complex-valued Morlet wavelets. For details, please refer to [1-5].
 %
 % At the input:
 %   - 'ddx' is a multivariate stationary time series (usually the second 
@@ -38,11 +38,14 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
 % REFERENCES:
 % [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and 
 %     Ecological Monitoring, Nauka, Moscow, 2007.
-% [2] J. Ashmead, Quanta, 1 (2012) 58-70.
-% [3] C. Torrence and G.P. Compo, Bull. Am. Meteorol. Soc., 79 (1998)
+% [2] A.A. Lyubushin, in: Complexity of Seismic Time Series: Measurement 
+%     and Applications, Elsevier, Amsterdam, 2018.
+%     DOI: 10.1016/B978-0-12-813138-1.00006-7.
+% [3] J. Ashmead, Quanta, 1 (2012) 58-70.
+% [4] C. Torrence and G.P. Compo, Bull. Am. Meteorol. Soc., 79 (1998)
 %     61-78.
-% [4] Michael X. Cohen, Parameters of Morlet wavelet (time-frequency
-%     trade-off), https://www.youtube.com/watch?v=LMqTM7EYlqY
+% [5] M.X. Cohen, Parameters of Morlet wavelet (time-frequency trade-off), 
+%     https://www.youtube.com/watch?v=LMqTM7EYlqY
 %
 % The end user is granted perpetual permission to reproduce, adapt, and/or 
 % distribute this code, provided that an appropriate link is given to the 
@@ -74,7 +77,7 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
     N = size(ddx, 2);    % Number of variates in the vector time series
 
     % Determining the frequency range for subsequent computing a 
-    % consistent one for the CCWA
+    % consistent one for the WCCA
     [~, psd_freq] = pwelch(ddx(:, 1), [], [], [], fs);            
     
     % We obtain the cone of influence ...
@@ -190,9 +193,9 @@ function varargout = getCanonicalCoherenceW(ddx, fs, timesOfInterest, energyThre
         % Informational message to the standard output
         if (isInfo)
             if (isempty(waveletSigma))
-                fprintf('CCWA (automatic time-frequency trade-off): variate %d of %d processed\n', ic, N);
+                fprintf('WCCA (automatic time-frequency trade-off): variate %d of %d processed\n', ic, N);
             else
-                fprintf('CCWA (user-defined time-frequency trade-off): variate %d of %d processed\n', ic, N);
+                fprintf('WCCA (user-defined time-frequency trade-off): variate %d of %d processed\n', ic, N);
             end
         end
     end

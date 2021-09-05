@@ -2,15 +2,16 @@ function [Ps, freqS, coi] = getPowerSpectrumW(x, fs, waveletSigma, preFreqs)
 % [Ps, freqS, coi] = getPowerSpectrumW(x, fs, waveletSigma, preFreqs)
 %
 % This code implements the computation of the continuous wavelet auto- or 
-% cross- power spectrum. It is based on MATLAB's function cwtft() (see also 
-% wcoherence() there). A Morlet wavelet is employed. For details, please 
-% refer to [1-3].
+% cross- power spectrum. It is based on MATLAB's function 'cwtft()' (see 
+% also 'wcoherence()' there). A Morlet wavelet is employed. For details, 
+% please refer to [1-3].
 %
 % At the input:
 %   - 'x' is a uni- or bivariate time series of the physical observables 
-%     'x_1(t)' and, possibly, 'x_2(t)'
+%     'x_1(t)' and, optionally, 'x_2(t)'
 %   - 'fs' is the sampling rate (optional)
-%   - 'waveletSigma' is the time-frequency resolution (optional)
+%   - 'waveletSigma' is the Morlet wavelet's time-frequency resolution 
+%     (optional)
 %   - 'preFreqs' are the preset scale-related frequency limits to perform 
 %     CWT within (optional; it will be computed automatically if not 
 %     provided).
@@ -29,8 +30,8 @@ function [Ps, freqS, coi] = getPowerSpectrumW(x, fs, waveletSigma, preFreqs)
 % [1] J. Ashmead, Quanta, 1 (2012) 58-70.
 % [2] C. Torrence and G.P. Compo, Bull. Am. Meteorol. Soc., 79 (1998)
 %     61-78.
-% [3] Michael X. Cohen, Parameters of Morlet wavelet (time-frequency
-%     trade-off), https://www.youtube.com/watch?v=LMqTM7EYlqY
+% [3] M.X. Cohen, Parameters of Morlet wavelet (time-frequency trade-off), 
+%     https://www.youtube.com/watch?v=LMqTM7EYlqY
 %
 % The end user is granted perpetual permission to reproduce, adapt, and/or
 % distribute this code, provided that an appropriate link is given to the
@@ -73,9 +74,9 @@ function [Ps, freqS, coi] = getPowerSpectrumW(x, fs, waveletSigma, preFreqs)
 
     % Optional smoothing. This is recommended for removing noise which 
     % appears after inverse Fourier transform. If smoothing is not 
-    % performed, singular spectral matrices may appear in function 
-    % getCanonicalCoherenceW() in file '../coherence/
-    % getCanonicalCoherenceW.m') due to nearly the same wavelet spectra
+    % performed, singular spectral matrices may appear in the function 
+    % 'getCanonicalCoherenceW()' in '../coherence/getCanonicalCoherenceW.m'
+    % due to nearly the same wavelet spectra
     Ps = smoothSpectrum(Ps, scales);
 end
 
@@ -110,8 +111,8 @@ function [wft, freqS, scales, coi] = MorletCWT(x_len, fs, preFreqs, x_adjustment
     % [waveletFreq] = [preFreqs] = [minFreq] = [freqS] = [coi] = hertz, or cycles per second
     % [fs] = samples per second
 
-    fpo = 12;                                   % Number of scale-related frequencies per octave. The greater this parameter, the more accurate the CWT
-    a0 = 2.0 ^ (1.0 / fpo);                     % Scale ratio (or geometric increment) between two successive voices
+    fpo = 12;                                               % Number of scale-related frequencies per octave. The greater this parameter, the more accurate the CWT
+    a0 = 2.0 ^ (1.0 / fpo);                                 % Scale ratio (or geometric increment) between two successive voices
     
     kappaSigma = exp(-0.5 * waveletSigma ^ 2.0);
     cSigma = 1.0 / sqrt(1.0 + exp(-waveletSigma ^ 2.0) - 2.0 * exp(-0.75 * waveletSigma ^ 2.0));
@@ -121,7 +122,7 @@ function [wft, freqS, scales, coi] = MorletCWT(x_len, fs, preFreqs, x_adjustment
     cutoffLevel = 0.1;
     waveletFourierTransform = @(omega)cutoffLevel - amplitude * (exp(-0.5 * (omega - waveletSigma) ^ 2.0) - kappaSigma * exp(-0.5 * omega ^ 2.0));  % Fourier transform of the Morlet wavelet minus the cutoff value
     
-    omegaMax = (sqrt(2.0 * 750.0) + waveletSigma);
+    omegaMax = sqrt(2.0 * 750.0) + waveletSigma;
     if (waveletFourierTransform(waveletSigma) > 0.0)
         omegaCutoff = omegaMax;
     else    
@@ -130,8 +131,8 @@ function [wft, freqS, scales, coi] = MorletCWT(x_len, fs, preFreqs, x_adjustment
     
     % We make a correction for the preset scale-related frequency (if
     % relevant)
-    minScale = omegaCutoff / pi / 1.0;          % Preliminary minimum admissible scale, in relative units (radians per second / radians per cycle / cycles per second)
-    maxScale = x_len / (2.0 * sqrt(2.0));       % Preliminary maximum admissible scale, in relative units (samples / samples)
+    minScale = omegaCutoff / pi / 1.0;                      % Preliminary minimum admissible scale, in relative units (radians per second / radians per cycle / cycles per second)
+    maxScale = x_len / (2.0 * sqrt(2.0));                   % Preliminary maximum admissible scale, in relative units (samples / samples)
 
     if (maxScale < minScale * a0)
         maxScale = minScale * a0;
@@ -164,7 +165,6 @@ function [wft, freqS, scales, coi] = MorletCWT(x_len, fs, preFreqs, x_adjustment
     % Finally, we compute the CWT of the Morlet wavelet on the determined 
     % time-related frequencies and scales
     wft = zeros(nScales, nFreq);
-    
     for j = 1 : nScales
         eexp1 = -0.5 * (scales(j) * freqT - waveletSigma) .^ 2.0;
         eexp1 = eexp1 .* (freqT > 0.0);

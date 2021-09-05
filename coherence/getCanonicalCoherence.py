@@ -2,7 +2,7 @@
 #
 # This code implements canonical coherence analysis (CCA) of multivariate data. The computation is performed using
 # an accurate non-parametric Fourier spectrum estimation that differs from the standard Python function
-# scipy.signal.csd(). For details on CCA, please refer to [1-3].
+# 'scipy.signal.csd()'. For details on CCA, please refer to [1-3].
 #
 # At the input:
 #   - 'ddx' is a multivariate stationary time series (usually the second derivative of a physical observable 'x(t)')

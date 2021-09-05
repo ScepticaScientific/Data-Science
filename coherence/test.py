@@ -1,7 +1,7 @@
 #!/home/ubuntu/miniconda/bin/python
 #
 # This file is the entry point for testing the canonical coherence analysis methods provided by the functions
-# getCanonicalCoherence() and getCanonicalCoherenceW(). Set the testID parameter to run a certain test.
+# 'getCanonicalCoherence()' and 'getCanonicalCoherenceW()'. Set the testID parameter to run a certain test.
 
 from getCanonicalCoherence import getCanonicalCoherence
 from getCanonicalCoherenceW import getCanonicalCoherenceW
@@ -68,19 +68,20 @@ elif (testID == 4):
     ddx[:, 2 - 1] = np.multiply(np.sin(2.0 * np.pi * fcommon1 * t), np.logical_and(t >= 0.6, t < 1.2)) + np.multiply(np.sin(2.0 * np.pi * fcommon2 * t), np.logical_and(t >= 0.4, t < 1.6)) + 0.35 * np.random.randn(len(t))
     ddx[:, 3 - 1] = np.multiply(np.sin(2.0 * np.pi * fcommon1 * t), np.logical_and(t >= 1.5, t < 1.8)) + np.multiply(np.sin(2.0 * np.pi * fcommon2 * t), np.logical_and(t >= 1.3, t < 1.7)) + 0.15 * np.random.randn(len(t))
 
+waveletSigma = 6.0      # Default value is 6.0
 energyLimit = 0.95
 
 ## Computing
 [evt, ev, freq] = getCanonicalCoherence(ddx, fs, True)
-[wevt, wev, freqS, coi, timeBorders] = getCanonicalCoherenceW(ddx, fs, np.array([t[np.int(np.floor(len(t) / 4) - 1)], t[np.int(np.floor(4 * len(t) / 5) - 1)]]), energyLimit, True)
+[wevt, wev, freqS, coi, timeBorders] = getCanonicalCoherenceW(ddx, fs, np.array([t[np.int(np.floor(len(t) / 4) - 1)], t[np.int(np.floor(4 * len(t) / 5) - 1)]]), energyLimit, waveletSigma, True)
 
 ## Output
 # (Fourier) CCA
 plt.figure()
 plt.subplot(2, 1, 1)
 plt.semilogx(freq, evt, 'k-')
-plt.xlabel(r'$\omega$')
-plt.ylabel(r'$C(\omega)$')
+plt.xlabel(r'$f, \mathrm{Hz}$')
+plt.ylabel(r'$C(f)$')
 plt.grid('on')
 plt.title('Canonical Coherence Analysis')
 
@@ -90,15 +91,15 @@ for i in range(1, N + 1):
     plt.semilogx(freq, ev[:, i - 1])
     leg_txt.append('%d' % (i))
 plt.legend(leg_txt)
-plt.xlabel(r'$\omega$')
-plt.ylabel(r'$c_i(\omega)$')
+plt.xlabel(r'$f, \mathrm{Hz}$')
+plt.ylabel(r'$c_i(f)$')
 plt.grid('on')
 
 # Wavelet CCA
 plt.figure()
 plt.pcolormesh(t, freqS, wevt)
 plt.xlabel(r'$t$')
-plt.ylabel(r'$\omega$')
+plt.ylabel(r'$f, \mathrm{Hz}$')
 plt.title('Wavelet CCA, Total Coherence')
 plt.yscale('log')
 plt.plot(t, coi, 'w--')
@@ -122,7 +123,7 @@ for i in range(1, N + 1):
         plt.title('Wavelet CCA, Partial Coherences')
     if (i == N):
         plt.xlabel(r'$t$')
-    plt.ylabel(r'$\omega$')
+    plt.ylabel(r'$f, \mathrm{Hz}$')
     plt.yscale('log')
     plt.plot(t, coi, 'w--')
     plt.colorbar()

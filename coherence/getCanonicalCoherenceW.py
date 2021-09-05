@@ -1,13 +1,16 @@
 #!/home/ubuntu/miniconda/bin/python
 #
-# This code implements canonical coherence analysis (CCA) of multivariate data. The computation is performed using
-# a Morlet wavelet spectrum estimation. For details on CCA, please refer to [1-2].
+# This code implements canonical coherence analysis (CCA) of multivariate data. The estimation of auto- and cross-
+# spectra is based on Morlet wavelets. For details on CCA please refer to [1-2], while for the definition of complex-
+# valued Morlet wavelets refer to [3-5].
 #
 # At the input:
 #   - 'ddx' is a multivariate stationary time series (usually the second derivative of a physical observable 'x(t)')
 #     'ddx(t) = (ddx_1(t), ..., ddx_N(t))'; the variates are provided column-wise
 #   - 'fs' is the sampling rate (optional)
-#   - 'isInfo' is the flag prescribing to output a message for each variate processed (optional).
+#   - 'waveletSigma' is the time-frequency resolution (optional)
+#   - 'isInfo' is the flag prescribing to output a message for each variate processed (optional)
+#   - 'isSmoothing' is the flag prescribing to smooth the spectra (optional, recommended).
 #
 # Besides, for an array of time moments this function allows to determine the left and right borders, out of which
 # the daughter wavelet, while moving in time at a fixed scale, does not involve those time moments' data samples
@@ -29,6 +32,9 @@
 # [1] A.A. Lyubushin, Data Analysis of Systems of Geophysical and Ecological Monitoring, Nauka, Moscow, 2007.
 # [2] A.A. Lyubushin, in: Complexity of Seismic Time Series: Measurement and Applications, Elsevier, Amsterdam, 2018.
 #                     DOI: 10.1016/B978-0-12-813138-1.00006-7.
+# [3] J. Ashmead, Quanta, 1 (2012) 58-70.
+# [4] C. Torrence and G.P. Compo, Bull. Am. Meteorol. Soc., 79 (1998) 61-78.
+# [5] M.X. Cohen, Parameters of Morlet wavelet (time-frequency trade-off), https://www.youtube.com/watch?v=LMqTM7EYlqY
 #
 # The end user is granted perpetual permission to reproduce, adapt, and/or distribute this code, provided that
 # an appropriate link is given to the original repository it was downloaded from.
@@ -41,12 +47,12 @@ import sys
 sys.path.append('../utils')
 from getPowerSpectrumW import getPowerSpectrumW
 
-def getCanonicalCoherenceW(ddx, fs = 1.0, timesOfInterest = [], energyThreshold = [], isInfo = False, isSmoothing = True):
+def getCanonicalCoherenceW(ddx, fs = 1.0, timesOfInterest = [], energyThreshold = [], waveletSigma = 6.0, isInfo = False, isSmoothing = True):
     ## Initialisation
     N = ddx.shape[2 - 1]     # Number of variates in the vector time series
 
     # Auxiliary computation (of the scale-related frequency range and the cone of influence)
-    [_, freqS, coi] = getPowerSpectrumW(ddx[:, [1 - 1, 1 - 1]], fs, isSmoothing)
+    [_, freqS, coi] = getPowerSpectrumW(ddx[:, [1 - 1, 1 - 1]], fs, waveletSigma, isSmoothing)
     freqS_len = len(freqS)
     freqT_len = ddx.shape[1 - 1]
 
@@ -62,20 +68,20 @@ def getCanonicalCoherenceW(ddx, fs = 1.0, timesOfInterest = [], energyThreshold 
         Sxx = np.zeros((N - 1, N - 1, freqS_len, freqT_len), dtype = np.complex128)
         for i in range(1, N):
             for j in range(1, N):
-                [Sxx[i - 1, j - 1, :, :], _, _] = getPowerSpectrumW(x[:, [i - 1, j - 1]], fs, isSmoothing)
+                [Sxx[i - 1, j - 1, :, :], _, _] = getPowerSpectrumW(x[:, [i - 1, j - 1]], fs, waveletSigma, isSmoothing)
 
         # ... for the mixtures of the first and second signals, ...
         Sxy = np.zeros((N - 1, 1, freqS_len, freqT_len), dtype = np.complex128)
         for i in range(1, N):
-            [Sxy[i - 1, 1 - 1, :, :], _, _] = getPowerSpectrumW(np.asarray([x[:, i - 1], y[:, 1 - 1]]).transpose(), fs, isSmoothing)
+            [Sxy[i - 1, 1 - 1, :, :], _, _] = getPowerSpectrumW(np.asarray([x[:, i - 1], y[:, 1 - 1]]).transpose(), fs, waveletSigma, isSmoothing)
 
         Syx = np.zeros((1, N - 1, freqS_len, freqT_len), dtype = np.complex128)
         for j in range(1, N):
-            [Syx[1 - 1, j - 1, :, :], _, _] = getPowerSpectrumW(np.asarray([y[:, 1 - 1], x[:, j - 1]]).transpose(), fs, isSmoothing)
+            [Syx[1 - 1, j - 1, :, :], _, _] = getPowerSpectrumW(np.asarray([y[:, 1 - 1], x[:, j - 1]]).transpose(), fs, waveletSigma, isSmoothing)
 
         # ... and for the second signal
         Syy = np.zeros((1, 1, freqS_len, freqT_len), dtype = np.complex128)
-        [Syy[1 - 1, 1 - 1, :, :], _, _] = getPowerSpectrumW(y[:, [1 - 1, 1 - 1]], fs, isSmoothing)
+        [Syy[1 - 1, 1 - 1, :, :], _, _] = getPowerSpectrumW(y[:, [1 - 1, 1 - 1]], fs, waveletSigma, isSmoothing)
 
         # Now we are to compute the matrix whose eigenvalues are measures of coherence and to explicitly determine
         # the maximum coherence at each frequency. (The implementation is vectorised to speed up the calculations.)
@@ -99,14 +105,14 @@ def getCanonicalCoherenceW(ddx, fs = 1.0, timesOfInterest = [], energyThreshold 
 
         # Informational message to the standard output
         if (isInfo):
-            print('CCWA: variate %d of %d processed' % (ic, N))
+            print('WCCA: variate %d of %d processed' % (ic, N))
 
     # Finally we compute the total coherence frequency-wise
     evt = np.prod(ev, axis = 3 - 1) ** (1.0 / N)
 
     # We obtain the energy cones out of which the moving daughter wavelet does not affect the specific time moments (if any)
     if (energyThreshold):
-        timeBorders = getBorders(freqS, energyThreshold, timesOfInterest, fs)
+        timeBorders = getBorders(freqS, energyThreshold, timesOfInterest, fs, waveletSigma)
         return [evt, ev, freqS, coi, timeBorders]
 
     return [evt, ev, freqS, coi]
@@ -119,12 +125,11 @@ def toMatrixArray(mtrx, nrows, ncols):
     return aux.reshape((1, nrows, -1, ncols)).swapaxes(1, 2).reshape((-1, nrows, ncols))
 
 # Computing the time borders (or energy cones) for specific time moments
-def getBorders(freq, energyThreshold, timesOfInterest, fs):
-    sigma = 6.0     # The Morlet wavelet parameter 'sigma' (see function MorletCWT() in file '../utils/getPowerSpectrumW.py')
-    FourierFactor = 2.0 * np.pi / sigma
+def getBorders(freq, energyThreshold, timesOfInterest, fs, waveletSigma):
+    waveletFreq = waveletSigma / (2.0 * np.pi)  # The frequency of the sine harmonic of the Morlet wavelet, a constant, in hertz (or in cycles per second)
 
-    scales = 1 * fs / freq / FourierFactor      # In samples
-    t = sspec.erfinv(energyThreshold)           # In relative units
+    scales = waveletFreq * fs / freq * 1.0      # In relative units
+    t = 1.0 * sspec.erfinv(energyThreshold)     # In samples (samples * relative units)
     t_deltas = t * scales / fs                  # In seconds
 
     if (np.isscalar(timesOfInterest)):

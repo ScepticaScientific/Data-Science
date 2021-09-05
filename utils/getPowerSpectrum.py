@@ -1,14 +1,18 @@
 #!/home/ubuntu/miniconda/bin/python
 #
 # This code implements the computation of the continuous Fourier auto- or cross- power spectrum using Welch's method.
-# The code is based on MATLAB's functions pwelch() and cpsd().
+# The code is based on MATLAB's functions 'pwelch()' and 'cpsd()'.
 #
-# At the input, 'x' is a uni- or bivariate time series of the physical observables 'x_1(t)' and, possibly, 'x_2(t)',
-# while 'fs' is the sampling rate (optional). If 'x_2(t)' is omitted then the auto-spectrum of 'x_1(t)' is computed;
-# otherwise the cross-spectrum between 'x_1(t)' and 'x_2(t)' is computed. The time series are to be provided column-wise
-# for each variate.
+# At the input:
+#   - 'x' is a uni- or bivariate time series of the physical observables 'x_1(t)' and, optionally, 'x_2(t)'
+#   - 'fs' is the sampling rate (optional).
 #
-# At the output, 'Ps' is the power spectrum, while 'freq' is the frequency range over which the spectrum is computed.
+# If 'x_2(t)' is omitted then the auto-spectrum of 'x_1(t)' is computed; otherwise the cross-spectrum between 'x_1(t)'
+# and 'x_2(t)' is computed. The time series are to be provided column-wise for each variate.
+#
+# At the output:
+#   - 'Ps' is the power spectrum
+#   - 'freq' is the frequency range over which the spectrum is computed.
 #
 # The end user is granted perpetual permission to reproduce, adapt, and/or distribute this code, provided that
 # an appropriate link is given to the original repository it was downloaded from.

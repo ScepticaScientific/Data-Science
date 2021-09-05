@@ -1,5 +1,5 @@
-% This is a test utility for the computation of continuous wavelet power
-% spectra provided by the function getPowerSpectrumW().
+% This is a test utility for the computation of continuous wavelet power 
+% spectra provided by the function 'getPowerSpectrumW()'.
 clear all;
 
 fs = 1000.0;                           
@@ -18,6 +18,7 @@ x(:, 2) = c2 + randn(length(t), 1);
 [wPsx1x2, freqSx1x2, coix1x2] = getPowerSpectrumW(x, fs, 6.0);
 [wPsx1x1, freqSx1x1, coix1x1] = getPowerSpectrumW(x(:, 1), fs, 6.0);
 
+%% Output
 figure;
 pcolor(t, freqSx1x2, abs(wPsx1x2));
 xlabel('Time, sec');

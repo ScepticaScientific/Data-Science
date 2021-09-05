@@ -51,7 +51,7 @@ elseif (testID == 4)    % Coherence at one to two different frequencies in time-
                 sin(2.0 * pi * fcommon2 * t) .* (t >= 1.3 & t < 1.7) + 0.15 * randn(size(t));
 end
 
-waveletSigma = 3.0;     % Default value is 6.0
+waveletSigma = 6.0;     % Default value is 6.0
 energyLimit = 0.95;
 
 %% Computing
