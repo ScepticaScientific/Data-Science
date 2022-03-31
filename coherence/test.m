@@ -89,7 +89,8 @@ pcolor(t, freq_w, evt_w);
 set(gca, 'YScale', 'log');
 shading flat;
 colorbar;
-xlabel('t');
+%xlabel('t');
+xlabel('t - b');
 ylabel('f, Hz');
 title('Wavelet CCA (automatic time-frequency trade-off), Total Coherence');
 axis xy;
@@ -117,7 +118,8 @@ for i = 1 : N
     shading flat;
     colorbar;
     if (i == N)
-        xlabel('t');
+        %xlabel('t');
+        xlabel('t - b');
     end
     ylabel('f, Hz');
     if (i == 1)
@@ -143,7 +145,8 @@ pcolor(t, freq_wSgm, evt_wSgm);
 set(gca, 'YScale', 'log');
 shading flat;
 colorbar;
-xlabel('t');
+%xlabel('t');
+xlabel('t - b');
 ylabel('f, Hz');
 title('Wavelet CCA (user-defined time-frequency trade-off), Total Coherence');
 axis xy;
@@ -171,7 +174,8 @@ for i = 1 : N
     shading flat;
     colorbar;
     if (i == N)
-        xlabel('t');
+        %xlabel('t');
+        xlabel('t - b');
     end
     ylabel('f, Hz');
     if (i == 1)

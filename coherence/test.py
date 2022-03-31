@@ -98,7 +98,8 @@ plt.grid('on')
 # Wavelet CCA
 plt.figure()
 plt.pcolormesh(t, freqS, wevt)
-plt.xlabel(r'$t$')
+#plt.xlabel(r'$t$')
+plt.xlabel(r'$t - b$')
 plt.ylabel(r'$f, \mathrm{Hz}$')
 plt.title('Wavelet CCA, Total Coherence')
 plt.yscale('log')
@@ -122,7 +123,8 @@ for i in range(1, N + 1):
     if (i == 1):
         plt.title('Wavelet CCA, Partial Coherences')
     if (i == N):
-        plt.xlabel(r'$t$')
+        #plt.xlabel(r'$t$')
+        plt.xlabel(r'$t - b$')
     plt.ylabel(r'$f, \mathrm{Hz}$')
     plt.yscale('log')
     plt.plot(t, coi, 'w--')
