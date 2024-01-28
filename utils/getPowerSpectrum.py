@@ -23,15 +23,15 @@ def getPowerSpectrum(x, fs = 1.0):
     # Initialisation
     x_len = x.shape[1 - 1]
 
-    wndTotal = np.int(np.floor(x_len / 4.5))            # Window length
-    wndOverlap = np.int(np.floor(0.5 * wndTotal))       # Length of the window overlap
+    wndTotal = int(np.floor(x_len / 4.5))            # Window length
+    wndOverlap = int(np.floor(0.5 * wndTotal))       # Length of the window overlap
     wnd = np.hamming(wndTotal)                          # Window
 
     nfft = max(256, 2 ** nextpow2(wndTotal))
 
     # We determine the number of segments into which we shall then split
     # the entire time interval of the data
-    nSegments = np.int(np.floor((x_len - wndOverlap) / (wndTotal - wndOverlap)))
+    nSegments = int(np.floor((x_len - wndOverlap) / (wndTotal - wndOverlap)))
 
     wndNonOverlap = wndTotal - wndOverlap
     iFrom = np.arange(1, nSegments * wndNonOverlap + 1, wndNonOverlap)
@@ -91,12 +91,12 @@ def getFrequencies(N, fs):
     freqResolution2 = freqResolution / 2.0
 
     if (np.mod(N, 2) == 1):
-        N2 = np.int((N + 1) / 2)
+        N2 = int((N + 1) / 2)
 
         freq[N2 - 1] = freqNyquist - freqResolution2
         freq[N2 + 1 - 1] = freqNyquist + freqResolution2
     else:
-        N2 = np.int((N / 2) + 1)
+        N2 = int((N / 2) + 1)
 
         freq[N2 - 1] = freqNyquist
 
@@ -108,12 +108,12 @@ def getFrequencies(N, fs):
 def getSpectrum(Per, freq, nfft):
     # We keep only the values corresponding to the frequency range [0, pi] or [0, pi)
     if (np.mod(nfft, 2) == 1):
-        inds = np.arange(1, np.int((nfft + 1) / 2 + 1))
+        inds = np.arange(1, int((nfft + 1) / 2 + 1))
 
         Per = 2.0 * Per[inds - 1]
         Per[1 - 1] = Per[1 - 1] / 2.0
     else:
-        inds = np.arange(1, np.int(nfft / 2 + 1 + 1))
+        inds = np.arange(1, int(nfft / 2 + 1 + 1))
 
         Per = 2.0 * Per[inds - 1]
         Per[1 - 1] = Per[1 - 1] / 2.0

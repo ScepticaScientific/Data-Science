@@ -73,7 +73,7 @@ energyLimit = 0.95
 
 ## Computing
 [evt, ev, freq] = getCanonicalCoherence(ddx, fs, True)
-[wevt, wev, freqS, coi, timeBorders] = getCanonicalCoherenceW(ddx, fs, np.array([t[np.int(np.floor(len(t) / 4) - 1)], t[np.int(np.floor(4 * len(t) / 5) - 1)]]), energyLimit, waveletSigma, True)
+[wevt, wev, freqS, coi, timeBorders] = getCanonicalCoherenceW(ddx, fs, np.array([t[int(np.floor(len(t) / 4) - 1)], t[int(np.floor(4 * len(t) / 5) - 1)]]), energyLimit, waveletSigma, True)
 
 ## Output
 # (Fourier) CCA

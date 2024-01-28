@@ -44,11 +44,11 @@ def getMSSByUpscaling(dx, normType = np.inf, isDFA = 1, isNormalised = 1):
     # We have to reserve the most major scale for shifts, so we divide the data
     # length by two. (As a result, the time measure starts from 2.0, not from
     # 1.0, see below.)
-    dx_len = np.int(dx_len / 2)
+    dx_len = int(dx_len / 2)
 
-    dx_shift = np.int(dx_len / 2)
+    dx_shift = int(dx_len / 2)
 
-    nScales = np.int(np.round(np.log2(dx_len)))    # Number of scales involved. P.S. We use 'round()' to prevent possible malcomputing of the logarithms
+    nScales = int(np.round(np.log2(dx_len)))    # Number of scales involved. P.S. We use 'round()' to prevent possible malcomputing of the logarithms
     j = 2 ** (np.arange(1, nScales + 1) - 1) - 1
 
     dataMeasure = np.zeros((nq, nScales))
@@ -57,10 +57,10 @@ def getMSSByUpscaling(dx, normType = np.inf, isDFA = 1, isNormalised = 1):
     for ji in range(1, nScales + 1):
         # At the scale 'j(ji)' we deal with '2 * (j(ji) + 1)' elements of the data 'dx'
         dx_k_len = 2 * (j[ji - 1] + 1)
-        n = np.int(dx_len / dx_k_len)
+        n = int(dx_len / dx_k_len)
 
-        dx_leftShift = np.int(dx_k_len / 2)
-        dx_rightShift = np.int(dx_k_len / 2)
+        dx_leftShift = int(dx_k_len / 2)
+        dx_rightShift = int(dx_k_len / 2)
 
         R = np.zeros(n)
         S = np.ones(n)

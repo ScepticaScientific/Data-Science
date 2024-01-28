@@ -140,7 +140,7 @@ def MorletCWT(x_len, fs, preFreqs, x_adjustment, waveletSigma):
     maxScale = waveletSigma / preFreqs[1 - 1] / 1.0             # ... maximum admissible scales are updated but keep the same dimensions: relative units
 
     maxNumOctaves = np.log2(maxScale / minScale)
-    scales = minScale * a0 ** np.arange(0, np.int(np.floor(maxNumOctaves * fpo)) + 1)       # Scales, in relative units
+    scales = minScale * a0 ** np.arange(0, int(np.floor(maxNumOctaves * fpo)) + 1)       # Scales, in relative units
 
     nScales = len(scales)
 
@@ -155,7 +155,7 @@ def MorletCWT(x_len, fs, preFreqs, x_adjustment, waveletSigma):
     freqS = waveletFreq * 1.0 / scales * fs                     # Actual scale-related frequencies, in hertz
 
     # ... and the cone of influence
-    xl = np.int(np.ceil(x_len / 2.0))
+    xl = int(np.ceil(x_len / 2.0))
     if (np.mod(x_len, 2) == 1):
         samples = np.concatenate((np.arange(1, xl + 1), np.arange(xl - 1, 1 - 1, -1)))
     else:
@@ -180,9 +180,9 @@ def waveletFourierTransform(omega, *params):
 # Adjusting signal length
 def adjustSignalLength(x_len):
     if (x_len <= 100000):
-        x_len_adjusted = np.int(np.floor(x_len / 2.0))
+        x_len_adjusted = int(np.floor(x_len / 2.0))
     else:
-        x_len_adjusted = np.int(np.ceil(np.log2(x_len)))
+        x_len_adjusted = int(np.ceil(np.log2(x_len)))
 
     return x_len_adjusted
 
@@ -192,10 +192,10 @@ def makeFourierTransformGrid(x_len, x_adjustment):
     N = x_len + 2 * x_adjustment
 
     # This is the first half of the frequency range ...
-    freqT = np.arange(1, np.int(np.floor(N / 2.0) + 1))
+    freqT = np.arange(1, int(np.floor(N / 2.0) + 1))
     freqT = freqT * (2.0 * np.pi) / N
     # ... while these are the indices for covering the second half
-    aux_inds = np.arange(np.int(np.floor((N - 1) / 2)), 1 - 1, -1)
+    aux_inds = np.arange(int(np.floor((N - 1) / 2)), 1 - 1, -1)
 
     # So, we make the frequency range, in radians per second
     freqT = np.concatenate([np.array([0.0]), freqT, -freqT[aux_inds - 1]])
@@ -209,8 +209,8 @@ def smoothSpectrum(mtrx, scales):
 
     nfft = 2 ** nextpow2(x_len)                                                     # We enlarge the number of samples to the closest power of two
 
-    freqT = 2.0 * np.pi / nfft * np.arange(1, np.int(np.floor(nfft / 2) + 1))
-    aux_inds = np.arange(np.int(np.floor((nfft - 1) / 2)), 1 - 1, -1)
+    freqT = 2.0 * np.pi / nfft * np.arange(1, int(np.floor(nfft / 2) + 1))
+    aux_inds = np.arange(int(np.floor((nfft - 1) / 2)), 1 - 1, -1)
     freqT = np.concatenate([np.array([0.0]), freqT, -freqT[aux_inds - 1]])          # In radians per second
 
     for k in range(1, mtrx.shape[1 - 1] + 1):

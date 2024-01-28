@@ -1,12 +1,13 @@
 #!/home/ubuntu/miniconda/bin/python
 #
 # This file is the entry point for testing the modified first-order uni- and multifractal DFA methods (functions
-# getHurstByUpscaling() and getMSSByUpscaling(), respectively). The initial dataset is a binomial cascade [1].
+# getHurstByUpscalingP2() and getMSSByUpscaling(), respectively). The initial dataset is a binomial cascade [1].
 #
 # REFERENCES:
 # [1] J. Feder, Fractals, Plenum Press, New York, 1988.
 
 from getHurstByUpscaling import getHurstByUpscaling
+from getHurstByUpscalingP2 import getHurstByUpscalingP2
 from getMSSByUpscaling import getMSSByUpscaling
 from getScalingExponents import getScalingExponents
 import numpy as np
@@ -19,8 +20,10 @@ dx = dx[1 - 1 : 8192]               # We take the first 8192 samples
 
 ## Computing
 # Modified first-order DFA
-[timeMeasure, meanDataMeasure, scales] = getHurstByUpscaling(dx)                    # Set of parameters No. 1
-#[timeMeasure, meanDataMeasure, scales] = getHurstByUpscaling(dx, 3.0, 0, 2.0)       # Set of parameters No. 2
+[timeMeasure, meanDataMeasure, scales, H, HMajor, HMinor, nMajorScalesDone] = getHurstByUpscaling(dx, 11, np.inf, True, 1.0)
+
+[timeMeasure, meanDataMeasure, scales] = getHurstByUpscalingP2(dx)                    # Set of parameters No. 1
+#[timeMeasure, meanDataMeasure, scales] = getHurstByUpscalingP2(dx, 3.0, 0, 2.0)       # Set of parameters No. 2
 
 [bScale, bDM, bsIndex, HMajor, HMinor] = getScalingExponents(timeMeasure, meanDataMeasure)
 
@@ -62,7 +65,7 @@ plt.ylabel(r'$\tau(q)$')
 plt.grid('on', which = 'major')
 
 plt.figure()
-nq = np.int(len(q))
+nq = len(q)
 leg_txt = []
 for qi in range(1, nq + 1):
     llh = plt.loglog(scales, dataMeasure[qi - 1, :], 'o-')
