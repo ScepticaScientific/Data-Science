@@ -102,7 +102,7 @@ def getHurstByUpscaling(dx, nMajorScalesToDo = np.inf, normType_p = np.inf, isDF
     H = -D
 
     # This code is the determination of the Hurst parameter 'H' over the major 'nMajorScalesToDo' scales ...
-    nMajorScalesDone = np.min(np.array([nScales, nMajorScalesToDo]))
+    nMajorScalesDone = int(np.min(np.array([nScales, nMajorScalesToDo])))
     log10tm = np.log10(timeMeasure[-nMajorScalesDone + 1 - 1 : ])
     log10dm = np.log10(meanDataMeasure[-nMajorScalesDone + 1 - 1 : ])
 
